@@ -1,0 +1,41 @@
+/* Shelfwise brand tokens: colours, store colours, self-hosted fonts and font stacks. */
+@font-face { font-family: 'Figtree'; font-weight: 800; font-style: normal; font-display: swap; src: url('/fonts/figtree-800.woff2') format('woff2'); }
+@font-face { font-family: 'Bricolage Grotesque'; font-weight: 700; font-style: normal; font-display: swap; src: url('/fonts/bricolage-700.woff2') format('woff2'); }
+@font-face { font-family: 'Bricolage Grotesque'; font-weight: 800; font-style: normal; font-display: swap; src: url('/fonts/bricolage-800.woff2') format('woff2'); }
+@font-face { font-family: 'IBM Plex Mono'; font-weight: 400; font-style: normal; font-display: swap; src: url('/fonts/plex-mono-400.woff2') format('woff2'); }
+
+:root {
+  --paper: #F2EEE6;
+  --card: #FBF9F5;
+  --line: #E4DED3;
+  --f950: #1E1519;
+  --f900: #2C2027;
+  --f800: #3B2A34;
+  --fig: #4A3242;
+  --fig-2: #5E4656;
+  --plum-t: #EEE5EA;
+  --butter: #E8CC7A;
+  --stone: #6E675D;
+  --pebble: #8F887D;
+  --marigold: #B27A34;
+  --marigold-fill: #DDA95E;
+  --marigold-text: #7D5D14;
+  --paprika: #A65340;
+  --tab-label: #4E4741;
+
+  --store-fig: #4A3242;
+  --store-claret: #5A2E36;
+  --store-cinnamon: #553423;
+  --store-olive: #40402A;
+  --store-forest: #2D4334;
+  --store-teal: #22434A;
+  --store-harbor: #2E3A55;
+  --store-slate: #3A3D45;
+
+  --font-title: 'Figtree', -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  --font-disp: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+
+  --tap: 44px;
+}

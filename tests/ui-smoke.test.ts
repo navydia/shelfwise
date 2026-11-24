@@ -35,7 +35,20 @@ describe('ui smoke', () => {
   });
   it('sw_precache_list_includes_all_view_modules', async () => {
     const sw = (await makeApp().api.get('/sw.js')).text;
-    for (const f of fs.readdirSync('public/views')) expect(sw, f).toContain(`/views/${f}`);
+    for (const dir of ['views', 'ui', 'lib', 'fonts']) {
+      for (const f of fs.readdirSync(`public/${dir}`)) expect(sw, f).toContain(`/${dir}/${f}`);
+    }
     for (const f of ['/', '/app.js', '/api.js', '/app.css', '/manifest.webmanifest']) expect(sw, f).toContain(`'${f}'`);
+  });
+  it('fonts_served_as_woff2', async () => {
+    const res = await makeApp().api.get('/fonts/figtree-800.woff2');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe("font/woff2");
+  });
+  it('tokens_css_has_store_colours', async () => {
+    const css = (await makeApp().api.get('/tokens.css')).text;
+    for (const hex of ['#4A3242', '#5A2E36', '#553423', '#40402A', '#2D4334', '#22434A', '#2E3A55', '#3A3D45']) {
+      expect(css.toUpperCase(), hex).toContain(hex);
+    }
   });
 });
