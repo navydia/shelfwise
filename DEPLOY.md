@@ -4,7 +4,7 @@ Shelfwise runs as one small Node process on your server. Tailscale gives it a pr
 
 ## 1. Install
 
-Needs Node 22 or newer.
+Needs **Node 22 (LTS)**. Newer versions (such as 26) may fail at `npm ci`, because the database library (`better-sqlite3`) has no ready-made build for them and falls back to compiling from source, which needs Python and C++ build tools. On Windows, install Node 22 from nodejs.org/en/download. On Windows PowerShell, use `npm.cmd` if `npm` is blocked by the script policy.
 
 ```sh
 git clone <your repo> shelfwise && cd shelfwise   # or copy the folder over
