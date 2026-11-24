@@ -3,7 +3,9 @@ import { mountTabBar } from './ui/tabbar.js';
 import { mountStorePicker } from './ui/store-picker.js';
 import { openStoreSheet } from './views/store-sheet.js';
 import { renderSettings } from './views/settings.js';
-import { renderPantry } from './views/pantry.js';
+import { renderPantry, pantryHooks } from './views/pantry.js';
+import { renderList } from './views/list.js';
+import { finishForStore } from './views/finish-sheet.js';
 
 const root = document.getElementById('view');
 const offlineBar = document.getElementById('offline');
@@ -21,14 +23,14 @@ export function toast(message) {
   setTimeout(() => el.remove(), 5000);
 }
 
-// List and Receipt are rebuilt in the following tasks; until then they show a placeholder.
+// Receipt is rebuilt in a following task; until then it shows a placeholder.
 function placeholder(title) {
   return (el) => {
     el.innerHTML = '<h1 class="title"></h1><div class="card"><p class="sub" style="margin:0">Being rebuilt.</p></div>';
     el.querySelector('.title').textContent = title;
   };
 }
-const VIEWS = { pantry: renderPantry, list: placeholder('List'), receipt: placeholder('Receipt'), settings: renderSettings };
+const VIEWS = { pantry: renderPantry, list: renderList, receipt: placeholder('Receipt'), settings: renderSettings };
 
 function route() {
   const [, view = 'pantry'] = location.hash.split('/');
@@ -53,6 +55,7 @@ function drawPill(view) {
 
 async function render() {
   const view = route();
+  document.getElementById('dock-action')?.replaceChildren(); // the List fills this with its Finish pill
   drawPill(view);
   if (state.loadError) {
     root.innerHTML = '<p class="empty"></p><button id="retry" class="btn-main" style="width:100%">Try again</button>';
@@ -101,6 +104,8 @@ async function reloadAfterEdit(select) {
   await loadStores();
   if (select != null) pickStore(select); else render();
 }
+
+pantryHooks.finishTrip = (id, { redraw }) => finishForStore(storeById(id), { toast, onDone: redraw });
 
 mountStorePicker(storeBtn, {
   getStores: () => state.stores,

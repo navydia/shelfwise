@@ -27,17 +27,18 @@ const items = [
   ['Eggs, large dozen', market, 'Dairy & eggs', 'Dairy', 389, 1, false],
   ['Salted butter', market, 'Dairy & eggs', 'Dairy', 549, 1, true],
   ['Chicken thighs', market, 'Meat & fish', 'Meat', 899, 1, false],
-  ['Spaghetti', market, 'Pasta & grains', 'Aisle 4', 189, 2, true],
-  ['Olive oil', market, 'Oils & condiments', 'Aisle 6', 1199, 1, false],
-  ['Crushed tomatoes', market, 'Canned & jarred', 'Aisle 5', 179, 2, false],
-  ['Flour, all purpose', market, 'Baking', 'Aisle 7', 399, 1, false],
+  ['Spaghetti', market, 'Pasta & grains', '4', 189, 2, true],
+  ['Olive oil', market, 'Oils & condiments', '6', 1199, 1, false],
+  ['Crushed tomatoes', market, 'Canned & jarred', '5', 179, 2, false],
+  ['Flour, all purpose', market, 'Baking', '7', 399, 1, false],
   ['Frozen peas', market, 'Frozen', 'Frozen', 229, 1, true],
-  ['Short grain rice', hmart, 'Pasta & grains', 'Aisle 2', 1299, 1, true],
-  ['Gochujang', hmart, 'Oils & condiments', 'Aisle 3', 649, 1, false],
+  ['Short grain rice', hmart, 'Pasta & grains', '2', 1299, 1, true],
+  ['Gochujang', hmart, 'Oils & condiments', '3', 649, 1, false],
   ['Kimchi', hmart, 'Canned & jarred', 'Cold wall', 799, 1, false],
   ['Sourdough loaf', bakery, 'Bakery', 'Counter', 650, 1, true],
+  ['Paper towels', market, 'Household', null, 899, 1, true],
   // 44 characters, for long-name truncation checks.
-  ['Organic extra virgin, cold pressed olive oil', market, 'Oils & condiments', 'Aisle 6', 1899, 1, false],
+  ['Organic extra virgin, cold pressed olive oil', market, 'Oils & condiments', '6', 1899, 1, false],
 ];
 
 for (const [name, store, category, aisle, price, usualQty, onList] of items) {

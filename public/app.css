@@ -184,3 +184,37 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .stepper .n { font-family: var(--font-disp); font-weight: 800; font-size: 18px; color: var(--f950); }
 .src { font-size: 12px; color: var(--stone); display: flex; align-items: center; gap: 6px; margin-top: -4px; }
 .src i { font-style: normal; font-family: var(--font-disp); font-weight: 700; font-size: 11px; background: var(--plum-t); color: var(--fig-2); padding: 2px 6px; border-radius: 5px; }
+
+/* List screen */
+.budget-tag { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; height: 68px; padding: 0 16px 0 30px; margin: 0 0 12px; border-radius: 6px 18px 18px 6px; background: var(--butter); color: var(--f950); text-align: left; }
+.budget-tag::before { content: ''; position: absolute; left: 11px; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--paper); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .15); }
+.budget-tag .price { font-size: 40px; color: inherit; }
+.budget-tag .side { display: grid; gap: 2px; text-align: right; font-size: 12.5px; font-weight: 600; line-height: 1.3; }
+.budget-tag .k { font-family: var(--font-disp); font-weight: 700; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
+.budget-tag.variant-near { background: var(--marigold-fill); }
+.budget-tag.variant-over { background: var(--paprika); color: var(--paper); }
+.list-bar { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 8px; }
+.list-bar .need { font-family: var(--font-disp); font-weight: 800; font-size: 12px; letter-spacing: .07em; color: var(--stone); }
+.list-bar .groupbtn { padding: 0 4px; }
+form.add { display: flex; gap: 8px; margin-bottom: 8px; }
+form.add input { flex: 1; min-width: 0; height: var(--tap); border-radius: 12px; background: var(--card); border: 1px solid var(--line); padding: 0 12px; font-size: 16px; }
+form.add button { min-height: var(--tap); padding: 0 16px; border-radius: 12px; background: var(--f950); color: var(--butter); font-family: var(--font-disp); font-weight: 800; }
+.tick { flex: none; width: var(--tap); height: var(--tap); min-height: var(--tap); padding: 0; margin: -8px 0 -8px -8px; background: transparent; display: grid; place-items: center; }
+.tick::before { content: ''; width: 24px; height: 24px; border-radius: 8px; border: 2px solid var(--stone); background: var(--card); box-sizing: border-box; }
+.tick[aria-pressed=true]::before { background: var(--f900) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E8CC7A' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 18px no-repeat; border-color: var(--f900); }
+.row .price { flex: none; font-size: 24px; }
+.row .dash { flex: none; width: 24px; text-align: center; color: var(--pebble); font-family: var(--font-disp); font-weight: 800; font-size: 20px; }
+.row.done .thumb, .row.done .info, .row.done .price, .row.done .dash { opacity: .55; }
+.row.done .nm { text-decoration: line-through; }
+.finish-pill { flex: none; white-space: nowrap; height: 44px; padding: 0 8px 0 16px; border-radius: 22px; background: var(--f950); color: var(--butter); display: flex; align-items: center; gap: 10px; font-family: var(--font-disp); font-weight: 800; font-size: 14px; box-shadow: 0 6px 16px rgba(30, 21, 25, .25); }
+.finish-pill i { font-style: normal; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; background: var(--butter); color: var(--f950); display: grid; place-items: center; font-size: 12.5px; }
+.budget-form { display: grid; gap: 12px; }
+.budget-form .btn-main { width: 100%; margin-top: 0; }
+.finish-form .rows { max-height: 32vh; overflow-y: auto; }
+.finish-form .label { margin-top: 12px; }
+.finish-form .still { margin: 0; font-size: 14px; color: var(--f900); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.finish-form .btn-soft.keep { width: 100%; margin-top: 8px; }
+.finish-form .row .nm { flex: 1; min-width: 0; color: var(--f950); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* With the full tab bar open there is no room beside it: the pill rides on a row above. */
+.dock:not(.mini):has(.finish-pill) { flex-wrap: wrap-reverse; }
+.dock:not(.mini):has(.finish-pill) #dock-action { flex-basis: 100%; margin: 0 0 8px; }
