@@ -1,0 +1,9 @@
+{
+  "name": "Shelfwise",
+  "short_name": "Shelfwise",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f1e7",
+  "theme_color": "#f6f1e7",
+  "icons": [{ "src": "/icon-180.png", "sizes": "180x180", "type": "image/png" }]
+}

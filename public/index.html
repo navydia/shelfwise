@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Shelfwise</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Shelfwise">
+  <meta name="theme-color" content="#f6f1e7">
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <header class="top">
+    <h1 class="brand">Shelfwise</h1>
+    <div class="store-switch">
+      <select id="store" aria-label="Store"></select>
+      <button id="add-store" class="icon-btn" aria-label="Add store">+</button>
+    </div>
+  </header>
+  <div id="offline" class="offline" hidden>Offline: showing saved data</div>
+  <main id="view"></main>
+  <button id="quick-flag" class="fab" hidden>Running low</button>
+  <nav class="tabs" aria-label="Sections">
+    <a href="#/review" data-tab="review">Review</a>
+    <a href="#/list" data-tab="list">List</a>
+    <a href="#/receipt" data-tab="receipt">Receipt</a>
+  </nav>
+  <dialog id="dialog"></dialog>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>
