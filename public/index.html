@@ -16,22 +16,14 @@
 <body>
   <header class="top">
     <div id="wordmark"></div>
-    <button id="store-btn" class="store-pill" type="button" aria-label="Store">Store</button>
-    <!-- Kept until Task 9 replaces the shell: app.js still drives these. -->
-    <div class="store-switch" hidden>
-      <select id="store" aria-label="Store"></select>
-      <button id="add-store" type="button" aria-label="Add store">+</button>
-    </div>
+    <button id="store-btn" class="store-pill" type="button" aria-label="Store" hidden></button>
   </header>
   <div id="offline" class="offline" hidden>Offline: showing saved data</div>
   <main id="view"></main>
-  <button id="quick-flag" class="fab" hidden>Running low</button>
-  <nav class="tabs" aria-label="Sections">
-    <a href="#/review" data-tab="review">Review</a>
-    <a href="#/list" data-tab="list">List</a>
-    <a href="#/receipt" data-tab="receipt">Receipt</a>
-  </nav>
-  <dialog id="dialog"></dialog>
+  <div class="dock">
+    <nav class="tabs glass" id="tabs" aria-label="Sections"></nav>
+    <div id="dock-action"></div>
+  </div>
   <script type="module">
     import { wordmarkHtml } from '/ui/wordmark.js';
     document.getElementById('wordmark').innerHTML = wordmarkHtml(24);
