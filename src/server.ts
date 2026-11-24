@@ -22,7 +22,7 @@ export function createApp(db: Db, opts: AppOptions = {}): Express {
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true });
   });
-  app.use('/api/stores', storesRouter(db));
+  app.use('/api/stores', storesRouter(db, dataDir));
   app.use('/api/stores', listRouter(db));
   app.use('/api/categories', categoriesRouter(db));
   app.use('/api/items', itemsRouter(db, dataDir));

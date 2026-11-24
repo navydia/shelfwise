@@ -40,3 +40,27 @@ describe('GET /api/stores/:id/list', () => {
     expect((await api.get('/api/stores/999/list')).status).toBe(404);
   });
 });
+
+describe('POST /api/stores/:id/finish', () => {
+  it('finish_takes_items_off_list', async () => {
+    const { api, a, mk } = await setup();
+    const rice = await mk('Rice', a.id, { onList: true, lastPriceCents: 300 });
+    const salt = await mk('Salt', a.id, { onList: true, lastPriceCents: 100 });
+    const res = await api.post(`/api/stores/${a.id}/finish`).send({ itemIds: [rice.id] });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ finished: 1 });
+    const list = (await api.get(`/api/stores/${a.id}/list`)).body;
+    expect(list.lines.map((l: { name: string }) => l.name)).toEqual([salt.name]);
+    expect((await api.post(`/api/stores/${a.id}/finish`).send({ itemIds: [] })).body).toEqual({ finished: 0 });
+  });
+  it('finish_rejects_items_from_other_store', async () => {
+    const { api, a, b, mk } = await setup();
+    const rice = await mk('Rice', a.id, { onList: true, lastPriceCents: 300 });
+    const olives = await mk('Olives', b.id, { onList: true });
+    const res = await api.post(`/api/stores/${a.id}/finish`).send({ itemIds: [rice.id, olives.id] });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('item is not in this store');
+    const list = (await api.get(`/api/stores/${a.id}/list`)).body;
+    expect(list.lines.map((l: { name: string }) => l.name)).toEqual(['Rice']);
+  });
+});
