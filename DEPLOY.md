@@ -4,7 +4,7 @@ Shelfwise runs as one small Node process on your server. Tailscale gives it a pr
 
 ## 1. Install
 
-Needs **Node 22.16 or newer** (22 LTS is a good choice; newer versions such as 24 and 26 also work). The app uses the SQLite database built into Node, so there is nothing to compile and no Python or C++ build tools are needed. You may see a one-line "SQLite is an experimental feature" warning when it starts. It is harmless.
+Needs **Node 22.16 or newer** (22 LTS is a good choice; newer versions should also work, but only Node 22 has been tested). The app uses the SQLite database built into Node, so there is nothing to compile and no Python or C++ build tools are needed. You may see a one-line "SQLite is an experimental feature" warning when it starts. It is harmless.
 
 On Windows PowerShell, use `npm.cmd` instead of `npm` if `npm` is blocked by the script policy.
 
