@@ -5,6 +5,7 @@ import { openStoreSheet } from './views/store-sheet.js';
 import { renderSettings } from './views/settings.js';
 import { renderPantry, pantryHooks } from './views/pantry.js';
 import { renderList } from './views/list.js';
+import { renderReceipt } from './views/receipt.js';
 import { finishForStore } from './views/finish-sheet.js';
 
 const root = document.getElementById('view');
@@ -23,14 +24,7 @@ export function toast(message) {
   setTimeout(() => el.remove(), 5000);
 }
 
-// Receipt is rebuilt in a following task; until then it shows a placeholder.
-function placeholder(title) {
-  return (el) => {
-    el.innerHTML = '<h1 class="title"></h1><div class="card"><p class="sub" style="margin:0">Being rebuilt.</p></div>';
-    el.querySelector('.title').textContent = title;
-  };
-}
-const VIEWS = { pantry: renderPantry, list: renderList, receipt: placeholder('Receipt'), settings: renderSettings };
+const VIEWS = { pantry: renderPantry, list: renderList, receipt: renderReceipt, settings: renderSettings };
 
 function route() {
   const [, view = 'pantry'] = location.hash.split('/');

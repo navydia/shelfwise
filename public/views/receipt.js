@@ -1,67 +1,182 @@
 import * as api from '../api.js';
+import { icon } from '../ui/icons.js';
+import { openSheet } from '../ui/sheet.js';
+import { fmt, priceParts } from '../lib/money.js';
 
-export async function renderReceipt(root, { storeId, toast }) {
-  root.innerHTML = '';
+function el(tag, className, text) {
+  const n = document.createElement(tag);
+  if (className) n.className = className;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+// Shelf-tag price: small $, big whole dollars, raised cents.
+function priceEl(cents) {
+  const { dollars, cents: c } = priceParts(cents);
+  const p = el('span', 'price');
+  p.append(el('span', 'd', '$'), dollars, el('sup', '', c));
+  return p;
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+const todayLabel = () => { const d = new Date(); return `${d.toLocaleDateString('en-US', { weekday: 'short' })} ${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'short' })}`; };
+
+export async function renderReceipt(root, ctx) {
+  const { storeId, toast, state } = ctx;
+  const store = state?.stores?.find((s) => s.id === storeId);
   const items = await api.getItems(storeId);
+  const itemById = new Map(items.map((i) => [i.id, i]));
+  root.innerHTML = '';
 
-  const pick = document.createElement('label');
-  pick.className = 'row';
-  pick.innerHTML = '<span class="grow"><span class="name">Photograph a receipt</span><br><span class="sub">Lay it flat in good light. You confirm every match before prices change.</span></span><span class="icon-btn" style="display:grid;place-items:center;background:var(--accent);color:var(--accent-ink);border-radius:10px;min-height:44px">📷</span>';
-  const file = document.createElement('input');
-  file.type = 'file'; file.accept = 'image/*'; file.hidden = true;
-  pick.append(file);
+  const head = el('div', 'rc-head');
+  head.append(el('h1', 'title', 'Receipt'));
+  const retake = el('button', 'link', 'Retake'); retake.type = 'button'; retake.hidden = true;
+  head.append(retake);
+  root.append(head);
+
+  const pick = el('label', 'card rc-pick');
+  const text = el('span', 'grow');
+  text.append(el('span', 'nm', 'Photograph a receipt'), el('span', 'sub', 'Lay it flat in good light. You confirm every match before prices change.'));
+  const cam = el('span', 'rc-cam');
+  cam.innerHTML = icon('camera');
+  cam.setAttribute('role', 'img'); cam.setAttribute('aria-label', 'Take photo');
+  const file = el('input'); file.type = 'file'; file.accept = 'image/*'; file.hidden = true;
+  pick.append(text, cam, file);
   root.append(pick);
 
-  const out = document.createElement('div');
+  const out = el('div', 'rc-out');
   root.append(out);
+  retake.addEventListener('click', () => renderReceipt(root, ctx));
 
   file.addEventListener('change', async () => {
     if (!file.files[0]) return;
-    out.innerHTML = '<p class="empty">Reading receipt…</p>';
+    out.replaceChildren(el('p', 'empty', 'Reading receipt…'));
     let result;
     try { result = await api.uploadReceipt(storeId, file.files[0]); }
-    catch (err) { out.innerHTML = ''; toast(err.message); return; }
+    catch (err) { out.replaceChildren(); toast(err.message); return; }
     file.value = '';
     if (!result.readable) {
-      out.innerHTML = '<p class="msg">I couldn\'t read that receipt. Nothing was changed. Try again with the receipt flat and well lit.</p>';
+      out.replaceChildren(el('p', 'msg', "I couldn't read that receipt. Nothing was changed. Try again with the receipt flat and well lit."));
       return;
     }
-    showMatches(out, result, items, { storeId, toast, root });
+    pick.hidden = true; retake.hidden = false;
+    showMatches(out, result, { items, itemById, store, toast, retake });
   });
 }
 
-function showMatches(out, receipt, items, { storeId, toast, root }) {
-  out.innerHTML = '<h2>Match each line to one of your items</h2>';
-  const picks = [];
-  for (const line of receipt.lines) {
-    const row = document.createElement('div');
-    row.className = 'row';
-    const info = document.createElement('div');
-    info.className = 'grow';
-    info.innerHTML = '<div class="name"></div><div class="sub"></div>';
-    info.querySelector('.name').textContent = line.raw.replace(/\s*\$?\d+\.\d{2}\s*[A-Za-z]?\s*$/, '') || line.raw;
-    info.querySelector('.sub').textContent = api.fmt(line.priceCents);
-    if (line.reason === 'alias') info.querySelector('.sub').insertAdjacentHTML('beforeend', ' <span class="mark">· remembered</span>');
-    const sel = document.createElement('select');
-    sel.setAttribute('aria-label', `Item for ${line.raw}`);
-    sel.append(new Option('Skip', ''));
-    for (const i of items) sel.append(new Option(i.name, i.id, false, i.id === line.proposedItemId));
-    picks.push({ line, sel });
-    row.append(info, sel);
-    out.append(row);
+function openPicker(items, onPick) {
+  const body = el('div', 'rc-picker');
+  const box = el('div', 'search');
+  box.insertAdjacentHTML('beforeend', icon('search'));
+  const input = el('input'); input.type = 'search'; input.placeholder = 'Search staples'; input.setAttribute('aria-label', 'Search staples'); input.autocomplete = 'off';
+  box.append(input);
+  const list = el('div', 'rc-picker-list');
+  body.append(box, list);
+  const sheet = openSheet({ title: 'Pick item', body });
+  function paint() {
+    const q = input.value.trim().toLowerCase();
+    list.replaceChildren();
+    const hits = items.filter((i) => !q || i.name.toLowerCase().includes(q));
+    if (!hits.length) list.append(el('p', 'empty', items.length ? 'No staples match.' : 'This store has no staples yet.'));
+    for (const i of hits) {
+      const b = el('button', 'row rc-opt'); b.type = 'button';
+      b.append(el('span', 'nm', i.name));
+      if (i.lastPriceCents != null) b.append(el('span', 'sub', fmt(i.lastPriceCents)));
+      b.addEventListener('click', () => { sheet.close(); onPick(i.id); });
+      list.append(b);
+    }
   }
-  const confirm = document.createElement('button');
-  confirm.textContent = 'Confirm matches';
-  confirm.style.width = '100%';
-  confirm.addEventListener('click', async () => {
-    const chosen = picks.filter((p) => p.sel.value);
-    const ids = chosen.map((p) => p.sel.value);
+  input.addEventListener('input', paint);
+  paint();
+}
+
+function showMatches(out, receipt, { items, itemById, store, toast, retake }) {
+  // choice: item id confirmed for the line, or null. Alias matches start confirmed; guesses wait for a tap.
+  const st = receipt.lines.map((line) => ({
+    line, choice: line.reason === 'alias' && line.proposedItemId != null ? line.proposedItemId : null, skipped: false,
+  }));
+  const total = receipt.lines.reduce((s, l) => s + (l.priceCents ?? 0), 0);
+
+  function draw() {
+    out.replaceChildren();
+    const card = el('div', 'rc');
+    card.append(el('div', 'paper'));
+    const info = el('div', 'grow');
+    info.append(el('div', 'nm', store?.name ?? 'Receipt'), el('div', 'sub', `${todayLabel()} · ${plural(receipt.lines.length, 'line')}`));
+    card.append(info, priceEl(total));
+    out.append(card);
+
+    const needs = st.filter((s) => s.choice == null && !s.skipped);
+    const matched = st.filter((s) => s.choice != null);
+
+    out.append(sectionHead('Needs a look', needs.length));
+    if (!needs.length) out.append(el('p', 'sub rc-none', 'Nothing needs a look.'));
+    for (const s of needs) out.append(needCard(s));
+
+    out.append(sectionHead('Matched', matched.length));
+    if (!matched.length) out.append(el('p', 'sub rc-none', 'No matches yet.'));
+    for (const s of matched) out.append(matchedRow(s));
+
+    const save = el('button', 'btn-main rc-save', `Save ${plural(matched.length, 'price')}`);
+    save.type = 'button'; save.disabled = matched.length === 0;
+    save.addEventListener('click', () => onSave(save));
+    out.append(save);
+  }
+
+  function sectionHead(label, n) {
+    const h = el('h2', 'rc-sh', label);
+    h.append(el('span', '', String(n)));
+    return h;
+  }
+
+  function needCard(s) {
+    const { line } = s;
+    const guess = line.proposedItemId != null ? itemById.get(line.proposedItemId) : null;
+    const q = el('div', 'rc-q');
+    const top = el('div', 'rc-top');
+    top.append(el('div', 'thumb', guess ? (guess.name[0]?.toUpperCase() ?? '') : '?'));
+    const g = el('div', 'info');
+    g.append(el('div', 'mono rc-raw', line.raw));
+    g.append(el('div', guess ? 'nm' : 'nm rc-nomatch', guess ? `${guess.name}?` : 'No match found'));
+    if (guess) g.append(el('div', 'rc-ask', 'Best guess, not sure'));
+    top.append(g);
+    if (line.priceCents != null) top.append(priceEl(line.priceCents));
+    const btns = el('div', 'rc-btns');
+    const mk = (label, cls, fn) => { const b = el('button', cls, label); b.type = 'button'; b.addEventListener('click', fn); return b; };
+    if (guess) btns.append(mk('Yes', 'yes', () => { s.choice = guess.id; draw(); }));
+    btns.append(mk('Pick item', '', () => openPicker(items, (id) => { s.choice = id; draw(); })));
+    btns.append(mk('Skip', '', () => { s.skipped = true; draw(); }));
+    q.append(top, btns);
+    return q;
+  }
+
+  function matchedRow(s) {
+    const row = el('div', 'row rc-m');
+    const tick = el('span', 'okb'); tick.innerHTML = icon('check'); tick.setAttribute('role', 'img'); tick.setAttribute('aria-label', 'Matched');
+    const g = el('div', 'info');
+    g.append(el('div', 'mono rc-raw', s.line.raw), el('div', 'nm', itemById.get(s.choice)?.name ?? 'Unknown item'));
+    row.append(tick, g);
+    if (s.line.priceCents != null) row.append(priceEl(s.line.priceCents));
+    const undo = el('button', 'link', 'Undo'); undo.type = 'button'; undo.setAttribute('aria-label', `Undo match for ${s.line.raw}`);
+    undo.addEventListener('click', () => { s.choice = null; s.skipped = false; draw(); });
+    row.append(undo);
+    return row;
+  }
+
+  async function onSave(btn) {
+    const ids = st.filter((s) => s.choice != null).map((s) => s.choice);
     if (new Set(ids).size !== ids.length) { toast('Two lines are matched to the same item. Pick one and skip the other.'); return; }
-    confirm.disabled = true;
+    btn.disabled = true;
     try {
-      const res = await api.confirmReceipt(receipt.id, picks.map((p) => ({ lineId: p.line.id, itemId: p.sel.value ? Number(p.sel.value) : null })));
-      root.innerHTML = `<p class="empty">${res.updated} price${res.updated === 1 ? '' : 's'} updated.<br><a href="#/list">View your list</a></p>`;
-    } catch (err) { confirm.disabled = false; toast(err.message); }
-  });
-  out.append(confirm);
+      const res = await api.confirmReceipt(receipt.id, st.map((s) => ({ lineId: s.line.id, itemId: s.choice })));
+      out.replaceChildren();
+      retake.hidden = true;
+      const done = el('p', 'empty', `${plural(res.updated, 'price')} updated.`);
+      const a = el('a', '', 'View your list'); a.href = '#/list';
+      done.append(el('br'), a);
+      out.append(done);
+    } catch (err) { btn.disabled = false; toast(err.message); }
+  }
+
+  draw();
 }

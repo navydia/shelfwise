@@ -11,5 +11,10 @@ outer.use((req, res, next) => {
   if (req.path.startsWith('/api/') && process.env.DELAY_FLAG && fs.existsSync(process.env.DELAY_FLAG)) setTimeout(next, 15000);
   else next();
 });
-outer.use(createApp(openDb(`${dataDir}/shelfwise.db`), { dataDir }));
+// FAKE_OCR=<path to .txt>: every receipt photo "reads" as that file's text.
+const fakeOcr = process.env.FAKE_OCR;
+outer.use(createApp(openDb(`${dataDir}/shelfwise.db`), {
+  dataDir,
+  ...(fakeOcr ? { readReceiptText: async () => fs.readFileSync(fakeOcr, 'utf8') } : {}),
+}));
 outer.listen(port, () => console.log('e2e server on', port));
