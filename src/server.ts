@@ -4,6 +4,7 @@ import path from 'node:path';
 import type { Db } from './db';
 import { storesRouter } from './routes/stores';
 import { itemsRouter } from './routes/items';
+import { listRouter } from './routes/list';
 
 export type AppOptions = {
   dataDir?: string;
@@ -19,6 +20,7 @@ export function createApp(db: Db, opts: AppOptions = {}): Express {
     res.json({ ok: true });
   });
   app.use('/api/stores', storesRouter(db));
+  app.use('/api/stores', listRouter(db));
   app.use('/api/items', itemsRouter(db, dataDir));
   app.use('/photos', express.static(path.join(dataDir, 'photos'), { maxAge: '30d', immutable: true }));
   return app;
