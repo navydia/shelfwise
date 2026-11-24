@@ -41,8 +41,29 @@ describe('receipts API', () => {
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ readable: false, lines: [] });
   });
-  // Task 5 rewrites this test for the single on-list flag.
-  it.todo('confirm_updates_price_alias_and_state — rewritten in Task 5');
+  it('confirm_updates_price_source_and_takes_off_list', async () => {
+    let text = 'EGGS 3.99';
+    const { upload, api, db, eggs, store } = await setup(() => text);
+    const itemFrom = async () => (await api.get(`/api/items?storeId=${store.id}`)).body.find((i: { id: number }) => i.id === eggs.id);
+    await api.patch(`/api/items/${eggs.id}`).send({ onList: true });
+
+    const first = (await upload()).body;
+    const firstLine = first.lines.find((l: { raw: string }) => l.raw === 'EGGS 3.99');
+    await api.post(`/api/receipts/${first.id}/confirm`).send({ matches: [{ lineId: firstLine.id, itemId: eggs.id }] });
+    const firstAt = (db.prepare('select created_at from receipts where id = ?').get(first.id) as { created_at: string }).created_at;
+    expect(await itemFrom()).toMatchObject({ lastPriceCents: 399, priceSource: 'receipt', priceDate: firstAt, onList: false });
+
+    await api.patch(`/api/items/${eggs.id}`).send({ lastPriceCents: 500 });
+    expect(await itemFrom()).toMatchObject({ lastPriceCents: 500, priceSource: 'manual' });
+
+    text = 'EGGS 4.25';
+    await api.patch(`/api/items/${eggs.id}`).send({ onList: true });
+    const second = (await upload()).body;
+    const secondLine = second.lines.find((l: { raw: string }) => l.raw === 'EGGS 4.25');
+    await api.post(`/api/receipts/${second.id}/confirm`).send({ matches: [{ lineId: secondLine.id, itemId: eggs.id }] });
+    const secondAt = (db.prepare('select created_at from receipts where id = ?').get(second.id) as { created_at: string }).created_at;
+    expect(await itemFrom()).toMatchObject({ lastPriceCents: 425, priceSource: 'receipt', priceDate: secondAt, onList: false });
+  });
   it('unmatched_lines_change_nothing', async () => {
     const { upload, api, db } = await setup();
     const up = (await upload()).body;
