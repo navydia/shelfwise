@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
 import { makeApp } from './helpers/app';
 
 describe('ui smoke', () => {
@@ -26,5 +27,15 @@ describe('ui smoke', () => {
   });
   it('receipt_view_module_served', async () => {
     expect((await makeApp().api.get('/views/receipt.js')).status).toBe(200);
+  });
+  it('service_worker_served_with_javascript_type', async () => {
+    const res = await makeApp().api.get('/sw.js');
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toMatch(/javascript/);
+  });
+  it('sw_precache_list_includes_all_view_modules', async () => {
+    const sw = (await makeApp().api.get('/sw.js')).text;
+    for (const f of fs.readdirSync('public/views')) expect(sw, f).toContain(`/views/${f}`);
+    for (const f of ['/', '/app.js', '/api.js', '/app.css', '/manifest.webmanifest']) expect(sw, f).toContain(`'${f}'`);
   });
 });

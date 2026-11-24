@@ -91,3 +91,13 @@ function syncFlag() { flagBtn.hidden = !state.stores.length; }
 
 await loadStores();
 render();
+
+// Warm the offline cache so every screen has saved data for a store trip.
+for (const s of state.stores) {
+  api.getItems(s.id).catch(() => {});
+  api.getList(s.id, api.store.get(`sw-budget-${s.id}`, '')).catch(() => {});
+}
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => { /* offline cache unavailable: app still works online */ });
+}
