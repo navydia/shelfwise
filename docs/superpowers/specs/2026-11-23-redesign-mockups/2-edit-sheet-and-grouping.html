@@ -1,0 +1,529 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .fg {
+    --paper:#F2EEE6; --card:#FBF9F5; --line:#E4DED3; --stone:#6E675D; --pebble:#8F887D;
+    --f950:#1E1519; --f900:#2C2027; --f800:#3B2A34; --fig:#4A3242; --fig-2:#5E4656; --plum:#8B6F80; --plum-t:#EEE5EA;
+    --ink:var(--f900);
+    --butter:#E8CC7A; --marigold:#B27A34; --marigold-t:#F3E4C9; --low-text:#76501D;
+    --paprika:#A65340; --paprika-t:#F2DDD4; --out-text:#8C4433; --ask:#7D5D14;
+    --disp:'Bricolage Grotesque', sans-serif; --sans:-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif; --mono:'IBM Plex Mono', ui-monospace, monospace;
+  }
+  .fg .note { font-size:13px; opacity:.82; line-height:1.55; max-width:860px; }
+  .row4 { display:flex; gap:24px; flex-wrap:wrap; justify-content:center; margin:22px 0 10px; }
+  .col { width:375px; }
+  .cap { font-size:13px; opacity:.82; margin:12px 4px 0; line-height:1.5; }
+  .ph { width:375px; height:780px; border-radius:44px; border:10px solid #141012; overflow:hidden; position:relative; box-shadow:0 18px 40px rgba(0,0,0,.25); font-family:var(--sans); background:var(--paper); color:var(--ink); }
+  .sb { height:40px; display:flex; justify-content:space-between; align-items:center; padding:0 26px; font-size:13px; font-weight:600; color:var(--f950); }
+  .in { padding:2px 16px 0; }
+
+  .brand { display:flex; justify-content:space-between; align-items:center; height:36px; }
+  .wm { display:flex; align-items:center; gap:8px; font-family:var(--disp); font-weight:800; font-size:19px; letter-spacing:-.03em; color:var(--f950); }
+  .wm svg { width:28px; height:28px; flex:none; }
+  .store { font-family:var(--disp); font-weight:700; font-size:13px; background:var(--card); border:1px solid var(--line); color:var(--f900); padding:7px 12px; border-radius:999px; }
+  h1.t { font-family:var(--disp); font-weight:800; font-size:34px; letter-spacing:-.035em; margin:12px 0 12px; line-height:1; color:var(--f950); }
+  .ghost { font-family:var(--disp); font-weight:700; font-size:14px; color:var(--fig); }
+
+  .price { font-family:var(--disp); font-weight:800; letter-spacing:-.04em; line-height:.9; display:inline-flex; align-items:flex-start; font-variant-numeric:tabular-nums; color:var(--f950); }
+  .price sup { font-size:.45em; margin-top:.12em; margin-left:2px; letter-spacing:-.02em; }
+  .price .d { font-size:.5em; margin-top:.1em; margin-right:1px; }
+
+  /* budget tag: butter + off-black, like a real shelf label */
+  .tag { background:var(--butter); color:var(--f950); border-radius:6px 18px 18px 6px; padding:14px 16px 12px 30px; position:relative; }
+  .tag::before { content:''; position:absolute; left:11px; top:50%; width:10px; height:10px; margin-top:-5px; border-radius:50%; background:var(--paper); box-shadow:inset 0 1px 2px rgba(0,0,0,.15); }
+  .tag .k { font-family:var(--disp); font-weight:700; font-size:11px; letter-spacing:.12em; text-transform:uppercase; }
+  .tag .price { font-size:64px; color:var(--f950); }
+  .tag .fine { display:flex; justify-content:space-between; font-size:11.5px; border-top:1.5px solid var(--f950); margin-top:8px; padding-top:6px; font-weight:600; }
+  .meter { display:flex; gap:3px; margin-top:8px; }
+  .meter i { flex:1; height:6px; border-radius:2px; background:var(--f950); }
+  .meter i.e { background:rgba(30,21,25,.16); }
+
+  .aisle { display:flex; justify-content:space-between; align-items:center; background:var(--fig); color:var(--paper); border-radius:10px; padding:8px 12px; margin:0 0 8px; font-family:var(--disp); }
+  .aisle b { font-weight:800; font-size:14px; letter-spacing:.04em; text-transform:uppercase; }
+  .aisle span { font-weight:600; font-size:12px; color:#C9B9C3; }
+  .aisle.shut { background:var(--card); color:var(--f900); border:1px solid var(--line); margin-top:14px; }
+  .aisle.shut span { color:var(--stone); }
+  .sh { font-family:var(--disp); font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.06em; margin:16px 2px 8px; display:flex; justify-content:space-between; color:var(--f900); }
+  .sh span { color:var(--stone); font-weight:600; }
+
+  .it { display:flex; align-items:center; gap:12px; background:var(--card); border-radius:14px; padding:8px 10px 8px 8px; margin-bottom:6px; }
+  .im { width:46px; height:46px; border-radius:10px; background:#ECE6DA; display:grid; place-items:center; font-size:26px; flex:none; }
+  .g { flex:1; min-width:0; }
+  .n { font-weight:650; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--f950); }
+  .n mark { background:rgba(232,204,122,.55); color:inherit; border-radius:3px; padding:0 1px; }
+  .s { font-size:12px; color:var(--stone); display:flex; align-items:center; gap:6px; white-space:nowrap; overflow:hidden; }
+  .it .price { font-size:24px; }
+  .it.x { opacity:.5; } .it.x .n { text-decoration:line-through; }
+  .it.lo { box-shadow:inset 3px 0 0 var(--marigold); }
+  .it.ou { box-shadow:inset 3px 0 0 var(--paprika); }
+  .ck { width:26px; height:26px; flex:none; border-radius:8px; border:2px solid var(--pebble); }
+  .it.x .ck { background:var(--f900); border-color:var(--f900); position:relative; }
+  .it.x .ck::after { content:''; position:absolute; left:7px; top:4px; width:6px; height:11px; border:2.5px solid var(--butter); border-top:0; border-left:0; transform:rotate(45deg); }
+
+  .jar { width:12px; height:14px; border:1.5px solid currentColor; border-radius:3px 3px 4px 4px; position:relative; display:inline-block; flex:none; }
+  .jar::after { content:''; position:absolute; left:1px; right:1px; bottom:1px; border-radius:1px 1px 2px 2px; background:currentColor; }
+  .jar.lo { color:var(--marigold); } .jar.lo::after { height:30%; }
+  .jar.ou { color:var(--paprika); } .jar.ou::after { height:0; }
+  .jars { display:flex; gap:4px; flex:none; }
+  .jars b { width:38px; height:44px; border-radius:10px; display:grid; place-items:center; background:var(--paper); color:var(--pebble); }
+  .jars b.on.f { background:var(--plum-t); color:var(--fig-2); box-shadow:inset 0 0 0 1.5px var(--plum); }
+  .jars b.on.h { background:var(--marigold-t); color:var(--marigold); box-shadow:inset 0 0 0 1.5px var(--marigold); }
+  .jars b.on.z { background:var(--paprika-t); color:var(--paprika); box-shadow:inset 0 0 0 1.5px var(--paprika); }
+  .jl { width:16px; height:20px; border:2px solid currentColor; border-radius:3px 3px 5px 5px; position:relative; margin-top:3px; }
+  .jl::before { content:''; position:absolute; left:-3px; right:-3px; top:-5px; height:3px; background:currentColor; border-radius:2px; }
+  .jl::after { content:''; position:absolute; left:2px; right:2px; bottom:2px; background:currentColor; border-radius:1px 1px 3px 3px; }
+  .f .jl::after { height:75%; } .h .jl::after { height:28%; } .z .jl::after { height:0; }
+
+  /* search + filter */
+  .find { display:flex; gap:8px; margin-bottom:10px; }
+  .search { flex:1; display:flex; align-items:center; gap:8px; height:44px; border-radius:12px; background:var(--card); border:1px solid var(--line); padding:0 12px; font-size:15px; color:var(--stone); }
+  .search svg { width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; flex:none; }
+  .search.typing { color:var(--f950); border-color:var(--fig); box-shadow:0 0 0 3px rgba(74,50,66,.12); }
+  .search .cur { width:2px; height:18px; background:var(--fig); margin-left:-6px; }
+  .search .clr { margin-left:auto; width:20px; height:20px; border-radius:50%; background:var(--pebble); color:var(--card); display:grid; place-items:center; font-size:12px; font-weight:700; }
+  .fbtn { width:44px; height:44px; border-radius:12px; background:var(--card); border:1px solid var(--line); display:grid; place-items:center; color:var(--f900); position:relative; }
+  .fbtn svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; }
+  .fbtn.on { background:var(--f900); color:var(--butter); border-color:var(--f900); }
+  .chips { display:flex; gap:6px; margin-bottom:14px; overflow:hidden; }
+  .chip { font-family:var(--disp); font-weight:700; font-size:13px; padding:7px 12px; border-radius:999px; background:#E9E3D8; color:var(--f900); white-space:nowrap; display:flex; align-items:center; gap:6px; }
+  .chip.on { background:var(--f900); color:var(--butter); }
+  .chip .jar { width:10px; height:12px; }
+  .hits { font-size:12.5px; color:var(--stone); margin:0 2px 8px; }
+
+  .rc { display:flex; gap:12px; align-items:center; background:var(--card); border-radius:14px; padding:10px; }
+  .paper { width:48px; height:64px; border-radius:4px; background:repeating-linear-gradient(#fff 0 5px,#ece6da 5px 6px); border:1px solid var(--line); flex:none; }
+  .mono { font-family:var(--mono); font-size:11px; color:var(--stone); letter-spacing:.02em; white-space:nowrap; }
+  .q { background:var(--card); border-radius:14px; padding:10px; margin-bottom:6px; box-shadow:inset 0 0 0 2px var(--marigold); }
+  .q .top { display:flex; gap:12px; align-items:center; }
+  .q .ask { font-size:12px; font-weight:600; color:var(--ask); }
+  .btns { display:flex; gap:6px; margin-top:10px; }
+  .btns span { flex:1; text-align:center; font-family:var(--disp); font-weight:700; font-size:13px; padding:9px 0; border-radius:10px; background:var(--paper); color:var(--f900); }
+  .btns span.y { background:var(--f950); color:var(--butter); }
+  .okb { width:26px; height:26px; flex:none; border-radius:50%; background:var(--plum-t); color:var(--fig-2); display:grid; place-items:center; font-weight:800; font-size:13px; }
+  .cta { position:absolute; left:16px; right:16px; bottom:96px; background:var(--f950); color:var(--butter); text-align:center; padding:15px; border-radius:14px; font-family:var(--disp); font-weight:800; font-size:16px; z-index:3; box-shadow:0 6px 16px rgba(30,21,25,.3); }
+
+  /* glass tab bar */
+  .dock { position:absolute; left:14px; right:14px; bottom:22px; display:flex; justify-content:center; z-index:5; }
+  .glass { background:rgba(251,249,245,.76); -webkit-backdrop-filter:blur(14px) saturate(170%); backdrop-filter:blur(14px) saturate(170%);
+           border:1px solid rgba(255,255,255,.75);
+           box-shadow:inset 0 1px 0 rgba(255,255,255,.9), inset 0 -1px 1px rgba(30,21,25,.06), 0 10px 28px rgba(30,21,25,.18), 0 1px 3px rgba(30,21,25,.12); }
+  .tabs { width:100%; height:62px; border-radius:31px; display:flex; align-items:center; padding:0 5px; cursor:pointer; transition:width .3s ease; }
+  .tabs span { flex:1; height:52px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border-radius:26px; font-family:var(--disp); font-weight:700; font-size:10.5px; color:#4E4741; }
+  .tabs svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .tabs .on { color:var(--f950); background:rgba(74,50,66,.11); }
+  .dock.mini .tabs { width:62px; }
+  .dock.mini .tabs span:not(.on) { display:none; }
+  .dock.mini .tabs .on { font-size:0; gap:0; }
+
+  /* logo + palette sheet */
+  .logos { display:flex; gap:20px; flex-wrap:wrap; align-items:stretch; margin:12px 0 6px; }
+  .lg { border-radius:18px; padding:16px; display:flex; flex-direction:column; gap:12px; background:#F2EEE6; color:#1E1519; min-width:300px; cursor:pointer; }
+  .lg .lock { display:flex; align-items:center; gap:12px; font-family:var(--disp); font-weight:800; font-size:34px; letter-spacing:-.035em; }
+  .lg .tiles { display:flex; gap:10px; align-items:center; }
+  .lg .tiles svg { border-radius:16px; box-shadow:0 4px 12px rgba(0,0,0,.18); }
+  .lg h4 { margin:0; font-family:var(--sans); font-size:13px; }
+  .lg p { margin:0; font-size:12.5px; opacity:.75; line-height:1.45; max-width:300px; }
+  .lg .pick { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; background:#1E1519; color:#E8CC7A; padding:2px 7px; border-radius:5px; margin-left:6px; }
+  .scale { display:flex; gap:0; margin:12px 0 4px; border-radius:14px; overflow:hidden; max-width:860px; }
+  .scale div { flex:1; padding:28px 10px 8px; font-family:var(--sans); font-size:11.5px; line-height:1.35; }
+  .scale b { display:block; font-family:var(--disp); font-size:14px; }
+</style>
+<style>
+  /* tag meter back to Fig */
+  .meter i { background:var(--fig); }
+  .meter i.e { background:rgba(74,50,66,.18); }
+  /* collapsed tab bar sits at the left */
+  .dock { justify-content:flex-start; }
+
+  /* ===== wordmarks ===== */
+  .wm { gap:0; }
+  .w { font-family:var(--disp); font-weight:800; letter-spacing:-.045em; color:var(--f950); line-height:1; display:inline-flex; align-items:baseline; position:relative; }
+  /* 1 · on the shelf: lowercase, sitting on a Fig shelf line */
+  .w1 { text-transform:lowercase; padding-bottom:.16em; }
+  .w1::after { content:''; position:absolute; left:-.06em; right:-.12em; bottom:0; height:.11em; min-height:2.5px; border-radius:.06em; background:var(--fig); }
+  /* 2 · weight split */
+  .w2 .lite { font-weight:500; color:var(--fig); letter-spacing:-.03em; }
+  /* 3 · tag dot over the i */
+  .w3 .i { position:relative; }
+  .w3 .i::before { content:''; position:absolute; left:52%; top:.1em; width:.27em; height:.17em; transform:translateX(-50%) rotate(-8deg); border-radius:.04em .08em .08em .04em; background:var(--fig);
+                   -webkit-mask:radial-gradient(circle at .07em 50%, transparent .028em, #000 .032em); mask:radial-gradient(circle at .07em 50%, transparent .028em, #000 .032em); }
+  .wmopts { display:flex; gap:18px; flex-wrap:wrap; margin:12px 0 6px; }
+  .wo { width:360px; border-radius:18px; overflow:hidden; cursor:pointer; }
+  .wo .lt, .wo .dk { padding:30px 24px; display:flex; align-items:center; justify-content:center; }
+  .wo .lt { background:#F2EEE6; }
+  .wo .dk { background:#1E1519; }
+  .wo .dk .w { color:#F2EEE6; }
+  .wo .dk .w1::after, .wo .dk .w3 .i::before { background:#E8CC7A; }
+  .wo .dk .w2 .lite { color:#E8CC7A; }
+  .wo .big { font-size:52px; }
+  .wo .meta { background:#F2EEE6; color:#1E1519; padding:12px 16px 14px; font-family:var(--sans); font-size:12.5px; line-height:1.45; border-top:1px solid #E4DED3; }
+  .wo .meta b { display:block; font-size:13.5px; margin-bottom:2px; }
+  .wo .meta .pick { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; background:#1E1519; color:#E8CC7A; padding:2px 7px; border-radius:5px; margin-left:6px; }
+  .wo .row { display:flex; gap:14px; align-items:center; justify-content:center; padding:0 0 18px; background:#F2EEE6; }
+  .wo .row .w { font-size:20px; }
+  .wo .row small { font-family:var(--sans); font-size:11px; color:#6E675D; }
+  .qa { max-width:860px; border-left:3px solid #E8CC7A; padding:6px 0 6px 14px; margin:18px 0 0; font-size:13.5px; line-height:1.55; }
+  .qa b { display:block; margin-bottom:2px; }
+</style>
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <!-- A: off-black tag, butter jar -->
+    <symbol id="markA" viewBox="0 0 64 64">
+      <rect x="2" y="2" width="60" height="60" rx="16" fill="#1E1519"/>
+      <circle cx="13" cy="32" r="4" fill="#F2EEE6"/>
+      <rect x="27" y="13" width="22" height="5" rx="2" fill="#E8CC7A"/>
+      <path d="M26 22h24a3 3 0 0 1 3 3v21a6 6 0 0 1-6 6H29a6 6 0 0 1-6-6V25a3 3 0 0 1 3-3z" fill="none" stroke="#E8CC7A" stroke-width="4"/>
+      <path d="M27 36h22v9a3 3 0 0 1-3 3H30a3 3 0 0 1-3-3z" fill="#E8CC7A"/>
+    </symbol>
+    <!-- B: butter tag, off-black jar -->
+    <symbol id="markB" viewBox="0 0 64 64">
+      <rect x="2" y="2" width="60" height="60" rx="16" fill="#E8CC7A"/>
+      <circle cx="13" cy="32" r="4" fill="#F2EEE6"/>
+      <rect x="27" y="13" width="22" height="5" rx="2" fill="#1E1519"/>
+      <path d="M26 22h24a3 3 0 0 1 3 3v21a6 6 0 0 1-6 6H29a6 6 0 0 1-6-6V25a3 3 0 0 1 3-3z" fill="none" stroke="#1E1519" stroke-width="4"/>
+      <path d="M27 36h22v9a3 3 0 0 1-3 3H30a3 3 0 0 1-3-3z" fill="#1E1519"/>
+    </symbol>
+    <!-- C: fig tag, butter jar -->
+    <symbol id="markC" viewBox="0 0 64 64">
+      <rect x="2" y="2" width="60" height="60" rx="16" fill="#4A3242"/>
+      <circle cx="13" cy="32" r="4" fill="#F2EEE6"/>
+      <rect x="27" y="13" width="22" height="5" rx="2" fill="#F2EEE6"/>
+      <path d="M26 22h24a3 3 0 0 1 3 3v21a6 6 0 0 1-6 6H29a6 6 0 0 1-6-6V25a3 3 0 0 1 3-3z" fill="none" stroke="#F2EEE6" stroke-width="4"/>
+      <path d="M27 36h22v9a3 3 0 0 1-3 3H30a3 3 0 0 1-3-3z" fill="#E8CC7A"/>
+    </symbol>
+    <symbol id="i-pantry" viewBox="0 0 24 24"><path d="M7 4h10M8 4v2a3 3 0 0 0-2 3v9a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a3 3 0 0 0-2-3V4"/><path d="M6 13h12"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2"/><circle cx="5" cy="18" r="1"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.2 6.5l2.6 1.5M17.2 16l2.6 1.5M4.2 17.5l2.6-1.5M17.2 8l2.6-1.5"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+  </defs>
+</svg>
+<style>
+  /* final wordmark: Butter tag dot */
+  .w3 .i::before { background:var(--butter); }
+  .w3.edge .i::before { filter:drop-shadow(0 0 .5px #1E1519) drop-shadow(0 0 .5px #1E1519); }
+  .final { display:flex; gap:18px; flex-wrap:wrap; margin:12px 0 8px; }
+  .final > div { border-radius:18px; padding:26px 28px; display:flex; flex-direction:column; align-items:center; gap:14px; min-width:300px; }
+  .final .lt { background:#F2EEE6; } .final .dk { background:#1E1519; } .final .dk .w { color:#F2EEE6; }
+  .final small { font-family:var(--sans); font-size:11.5px; color:#6E675D; } .final .dk small { color:#C9B9C3; }
+  .final .big { font-size:56px; }
+  .final .hdr { font-size:22px; }
+  /* active filter summary */
+  .fbtn .badge { position:absolute; top:-5px; right:-5px; min-width:18px; height:18px; border-radius:9px; background:var(--butter); color:var(--f950); font-family:var(--disp); font-weight:800; font-size:11px; display:grid; place-items:center; padding:0 4px; box-shadow:0 0 0 2px var(--paper); }
+  .active { display:flex; justify-content:space-between; align-items:center; font-size:13px; color:var(--f900); margin:0 2px 12px; }
+  .active b { font-weight:650; }
+  .active span.clr2 { font-family:var(--disp); font-weight:700; color:var(--fig); }
+  /* filter sheet */
+  .dim { position:absolute; inset:0; background:rgba(30,21,25,.38); z-index:6; }
+  .sheet { position:absolute; left:0; right:0; bottom:0; background:var(--card); border-radius:28px 28px 0 0; z-index:7; padding:10px 18px 30px; }
+  .handle { width:38px; height:5px; border-radius:3px; background:#D9D2C6; margin:0 auto 12px; }
+  .sheet .top { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .sheet h2 { font-family:var(--disp); font-weight:800; font-size:24px; letter-spacing:-.03em; color:var(--f950); margin:0; }
+  .sheet .reset { font-family:var(--disp); font-weight:700; font-size:14px; color:var(--fig); }
+  .grp { margin-top:14px; }
+  .grp .lbl { font-family:var(--disp); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--stone); margin-bottom:8px; }
+  .opts { display:flex; flex-wrap:wrap; gap:6px; }
+  .opts span { font-family:var(--disp); font-weight:700; font-size:13.5px; padding:9px 13px; border-radius:12px; background:var(--paper); color:var(--f900); display:flex; align-items:center; gap:6px; }
+  .opts span.on { background:var(--f900); color:var(--butter); }
+  .opts .jar { width:10px; height:12px; }
+  .opts span.on .jar { color:var(--butter); }
+  .tog { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-top:1px solid var(--line); font-size:15px; color:var(--f950); }
+  .sw { width:46px; height:28px; border-radius:14px; background:#D9D2C6; position:relative; }
+  .sw::after { content:''; position:absolute; left:3px; top:3px; width:22px; height:22px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(0,0,0,.2); }
+  .sw.on { background:var(--fig); } .sw.on::after { left:21px; }
+  .apply { margin-top:14px; background:var(--f950); color:var(--butter); text-align:center; padding:15px; border-radius:14px; font-family:var(--disp); font-weight:800; font-size:16px; }
+</style>
+<style>
+  .ph { overflow:clip; }
+  .finish { flex:1; height:62px; margin-left:8px; border-radius:31px; background:var(--f950); color:var(--butter); display:flex; align-items:center; justify-content:center; gap:8px; font-family:var(--disp); font-weight:800; font-size:16px; box-shadow:0 10px 24px rgba(30,21,25,.28); }
+  .finish small { font-family:var(--sans); font-weight:600; font-size:12.5px; color:#C9B9C3; }
+  .dock.mini { justify-content:flex-start; }
+  .sumrow { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); font-size:14.5px; color:var(--f950); }
+  .sumrow .im { width:34px; height:34px; font-size:19px; border-radius:8px; }
+  .sumrow .to { margin-left:auto; font-size:12px; color:var(--stone); display:flex; align-items:center; gap:5px; }
+  .sumhead { font-family:var(--disp); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--stone); margin:14px 0 2px; }
+  .ghostbtn { margin-top:8px; text-align:center; padding:13px; font-family:var(--disp); font-weight:700; font-size:15px; color:var(--fig); }
+  .banner { background:var(--card); border-radius:14px; padding:12px 14px; margin:0 0 12px; box-shadow:inset 0 0 0 2px var(--butter), 0 1px 2px rgba(0,0,0,.04); }
+  .banner b { display:block; font-family:var(--disp); font-size:15px; color:var(--f950); margin-bottom:2px; }
+  .banner p { margin:0; font-size:13px; color:var(--stone); line-height:1.4; }
+  .banner .bb { display:flex; gap:8px; margin-top:10px; }
+  .banner .bb span { flex:1; text-align:center; font-family:var(--disp); font-weight:700; font-size:13.5px; padding:10px 0; border-radius:10px; background:var(--paper); color:var(--f900); }
+  .banner .bb span.y { background:var(--f950); color:var(--butter); }
+</style>
+<style>
+  /* ===== status symbol options ===== */
+  .symopts { display:flex; gap:16px; flex-wrap:wrap; margin:12px 0 4px; }
+  .so { background:#F2EEE6; color:#1E1519; border-radius:16px; padding:14px 14px; width:340px; cursor:pointer; font-family:var(--sans); }
+  .so h4 { margin:0 0 4px; font-family:var(--disp); font-size:16px; }
+  .so p { margin:8px 0 0; font-size:12.5px; line-height:1.45; color:#4E4741; }
+  .so .demo { display:flex; gap:10px; align-items:center; background:#FBF9F5; border-radius:12px; padding:10px; }
+  .so .demo small { font-size:11px; color:#6E675D; display:block; text-align:center; margin-top:4px; }
+  .so .st2 b { min-width:42px; padding:0 7px; font-size:13px; }
+  .pick { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; background:#1E1519; color:#E8CC7A; padding:2px 7px; border-radius:5px; margin-left:6px; vertical-align:2px; }
+
+  /* A · word buttons */
+  .st2 { display:flex; gap:4px; flex:none; }
+  .st2 b { min-width:50px; height:40px; padding:0 10px; border-radius:10px; display:grid; place-items:center; font-family:var(--disp); font-weight:700; font-size:13.5px; background:var(--paper); color:var(--stone); }
+  .st2 b.lo.on { background:var(--marigold-t); color:var(--low-text); box-shadow:inset 0 0 0 1.5px var(--marigold); }
+  .st2 b.ou.on { background:var(--paprika-t); color:var(--out-text); box-shadow:inset 0 0 0 1.5px var(--paprika); }
+  /* B · gauge */
+  .gz { display:flex; gap:4px; } .gz b { width:44px; height:44px; border-radius:10px; display:grid; place-items:center; background:var(--paper); color:#A39C90; }
+  .gz b.on.lo { background:var(--marigold-t); color:var(--marigold); box-shadow:inset 0 0 0 1.5px var(--marigold); }
+  .gz b.on.ou { background:var(--paprika-t); color:var(--paprika); box-shadow:inset 0 0 0 1.5px var(--paprika); }
+  .gz svg { width:26px; height:26px; fill:none; stroke:currentColor; stroke-width:2.2; stroke-linecap:round; }
+  /* C · level bars */
+  .lv { display:flex; gap:4px; } .lv b { width:44px; height:44px; border-radius:10px; display:grid; place-items:center; background:var(--paper); color:#A39C90; }
+  .lv b.on.lo { background:var(--marigold-t); color:var(--marigold); box-shadow:inset 0 0 0 1.5px var(--marigold); }
+  .lv b.on.ou { background:var(--paprika-t); color:var(--paprika); box-shadow:inset 0 0 0 1.5px var(--paprika); }
+  .lv svg { width:24px; height:24px; }
+
+  /* inline status pill on list rows */
+  .pill { font-family:var(--disp); font-weight:700; font-size:11.5px; padding:2px 7px; border-radius:6px; }
+  .pill.lo { background:var(--marigold-t); color:var(--low-text); }
+  .pill.ou { background:var(--paprika-t); color:var(--out-text); }
+
+  /* ===== compact budget tag ===== */
+  .ctag { background:var(--butter); color:var(--f950); border-radius:6px 16px 16px 6px; padding:10px 14px 10px 28px; position:relative; display:grid; grid-template-columns:auto 1fr; column-gap:14px; align-items:end; }
+  .ctag::before { content:''; position:absolute; left:10px; top:50%; width:9px; height:9px; margin-top:-4.5px; border-radius:50%; background:var(--paper); box-shadow:inset 0 1px 2px rgba(0,0,0,.15); }
+  .ctag .price { font-size:40px; color:var(--f950); }
+  .ctag .side { text-align:right; font-size:12px; font-weight:600; line-height:1.35; padding-bottom:2px; }
+  .ctag .side .k { font-family:var(--disp); font-weight:700; font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; }
+  .ctag .meter { grid-column:1 / -1; margin-top:8px; }
+  .ctag .meter i { height:5px; }
+
+  /* list toolbar + group headers */
+  .lbar { display:flex; justify-content:space-between; align-items:center; margin:14px 2px 6px; }
+  .lbar .cnt { font-family:var(--disp); font-weight:800; font-size:13px; text-transform:uppercase; letter-spacing:.06em; color:var(--f900); }
+  .lbar .cnt span { color:var(--stone); font-weight:600; margin-left:4px; }
+  .gbtn { display:flex; align-items:center; gap:6px; height:34px; padding:0 12px; border-radius:999px; background:var(--card); border:1px solid var(--line); font-family:var(--disp); font-weight:700; font-size:13px; color:var(--f900); }
+  .gbtn svg { width:16px; height:16px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; }
+  .gh { display:flex; align-items:center; gap:8px; margin:12px 2px 6px; font-family:var(--disp); font-weight:800; font-size:14px; color:var(--f950); }
+  .gh .no { font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; background:var(--f900); color:var(--butter); padding:3px 7px; border-radius:6px; }
+  .gh .ct { margin-left:auto; font-size:12px; font-weight:600; color:var(--stone); }
+  .it.slim { padding:6px 10px 6px 6px; } .it.slim .im { width:40px; height:40px; font-size:22px; }
+
+  /* edit sheet */
+  .field { margin-top:12px; }
+  .field .lbl { font-family:var(--disp); font-weight:800; font-size:12px; text-transform:uppercase; letter-spacing:.07em; color:var(--stone); margin-bottom:7px; display:flex; justify-content:space-between; }
+  .field .lbl em { font-style:normal; font-weight:600; text-transform:none; letter-spacing:0; font-family:var(--sans); }
+  .inp { height:44px; border-radius:12px; background:var(--paper); display:flex; align-items:center; padding:0 12px; font-size:15px; color:var(--f950); gap:8px; }
+  .inp .ch { margin-left:auto; color:var(--stone); }
+  .stepper { display:flex; align-items:center; gap:0; border-radius:12px; background:var(--paper); height:44px; width:132px; justify-content:space-between; padding:0 4px; }
+  .stepper b { width:36px; height:36px; border-radius:9px; background:var(--card); display:grid; place-items:center; font-family:var(--disp); font-size:18px; color:var(--f900); }
+  .stepper span { font-family:var(--disp); font-weight:800; font-size:18px; color:var(--f950); }
+  .hint { font-size:12px; color:var(--stone); margin-top:6px; }
+  .edit-head { display:flex; gap:12px; align-items:center; }
+  .edit-head .im { width:60px; height:60px; font-size:34px; border-radius:14px; position:relative; }
+  .edit-head .im::after { content:'Change'; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); font-family:var(--disp); font-weight:700; font-size:10px; background:var(--f900); color:var(--butter); padding:2px 6px; border-radius:6px; }
+  .two { display:flex; gap:12px; } .two > div { flex:1; }
+  .dock.mini { align-items:center; }
+  .fin { margin-left:auto; height:44px; padding:0 8px 0 16px; border-radius:22px; background:var(--f950); color:var(--butter); display:flex; align-items:center; gap:10px; font-family:var(--disp); font-weight:800; font-size:14px; box-shadow:0 6px 16px rgba(30,21,25,.25); }
+  .fin i { font-style:normal; min-width:26px; height:26px; border-radius:13px; background:var(--butter); color:var(--f950); display:grid; place-items:center; font-size:12.5px; }
+</style>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="i-group" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="13" width="16" height="7" rx="1.5"/><path d="M8 16.5h8"/></symbol>
+</defs></svg>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Instrument+Serif&display=swap" rel="stylesheet">
+<style>
+  .ph { overflow:clip; }
+  /* new page-title font */
+  h1.t { font-family:'Fraunces', Georgia, serif; font-weight:600; font-size:32px; letter-spacing:-.02em; }
+  .fonts { display:flex; gap:16px; flex-wrap:wrap; margin:12px 0 4px; }
+  .fo { width:340px; background:#F2EEE6; color:#1E1519; border-radius:16px; padding:16px 18px; cursor:pointer; font-family:var(--sans); }
+  .fo .pair { display:flex; flex-direction:column; gap:10px; }
+  .fo .t2 { font-size:34px; line-height:1; color:#1E1519; }
+  .fo p { margin:10px 0 0; font-size:12.5px; line-height:1.45; color:#4E4741; }
+  .fo h4 { margin:0 0 10px; font-size:13px; }
+  .pk { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; background:#1E1519; color:#E8CC7A; padding:2px 7px; border-radius:5px; margin-left:6px; }
+
+  /* one toggle: on the list or not */
+  .add { width:44px; height:44px; border-radius:12px; flex:none; display:grid; place-items:center; background:var(--paper); color:var(--stone); }
+  .add svg { width:24px; height:24px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .add.on { background:var(--f900); color:var(--butter); }
+  .it.need { box-shadow:inset 3px 0 0 var(--fig); }
+  .demo1 { display:flex; gap:28px; align-items:center; background:#F2EEE6; color:#1E1519; border-radius:16px; padding:14px 18px; margin:12px 0 4px; max-width:620px; font-family:var(--sans); font-size:13px; }
+  .demo1 div { display:flex; align-items:center; gap:10px; }
+
+  /* dropdown inputs */
+  .inp.dd .ch { font-size:12px; }
+  .money { display:flex; gap:8px; align-items:center; }
+  .money .inp { flex:1; font-family:var(--disp); font-weight:800; font-size:18px; }
+  .money .inp .cur { color:var(--stone); font-weight:700; }
+  .src { font-size:12px; color:var(--stone); margin-top:6px; display:flex; align-items:center; gap:6px; }
+  .src i { font-style:normal; font-family:var(--disp); font-weight:700; font-size:11px; background:var(--plum-t); color:var(--fig-2); padding:2px 6px; border-radius:5px; }
+  .gh .lab { font-family:var(--disp); font-weight:800; font-size:14px; }
+  .gh .aisleno { font-family:var(--disp); font-weight:800; font-size:12px; letter-spacing:.06em; text-transform:uppercase; background:var(--f900); color:var(--butter); padding:4px 9px; border-radius:7px; }
+</style>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="b-add" viewBox="0 0 24 24"><path d="M3.5 9.5h17l-1.6 9.1a2 2 0 0 1-2 1.7H7.1a2 2 0 0 1-2-1.7z"/><path d="M8 9.5l2.5-5M16 9.5l-2.5-5"/><path d="M12 12.5v5M9.5 15h5"/></symbol>
+  <symbol id="b-on" viewBox="0 0 24 24"><path d="M3.5 9.5h17l-1.6 9.1a2 2 0 0 1-2 1.7H7.1a2 2 0 0 1-2-1.7z"/><path d="M8 9.5l2.5-5M16 9.5l-2.5-5"/><path d="M9.3 15l2 2 3.6-3.8"/></symbol>
+</defs></svg>
+
+<div class="fg">
+  <h2>One "add to list" toggle, serif page titles, and edit-sheet fields</h2>
+
+  <h3>Low and Out become one toggle</h3>
+  <div class="demo1">
+    <div><span class="add"><svg><use href="#b-add"/></svg></span>Stocked (default): basket with a plus</div>
+    <div><span class="add on"><svg><use href="#b-on"/></svg></span>On the list: filled, with a tick</div>
+  </div>
+  <p class="cap" style="margin-left:0;max-width:760px">One tap puts a staple on its store's list, another takes it off. Marigold and Paprika now only mean "nearly at budget" and "over budget", so status colour on the Pantry is just the off-black button and a Fig edge on the row.</p>
+
+  <h3>Page title font</h3>
+  <div class="fonts cards">
+    <div class="fo card" data-choice="title-fraunces" onclick="toggleSelect(this)">
+      <h4>Fraunces SemiBold <span class="pk">My pick</span></h4>
+      <div class="pair"><span class="w w3 edge" style="font-size:24px">Shelfw<span class="i">ı</span>se</span><span class="t2" style="font-family:'Fraunces',serif;font-weight:600;letter-spacing:-.02em">Pantry</span></div>
+      <p>A warm, soft serif. Clear contrast with the chunky wordmark, and it echoes the "warm editorial" direction you started with.</p>
+    </div>
+    <div class="fo card" data-choice="title-instrument" onclick="toggleSelect(this)">
+      <h4>Instrument Serif</h4>
+      <div class="pair"><span class="w w3 edge" style="font-size:24px">Shelfw<span class="i">ı</span>se</span><span class="t2" style="font-family:'Instrument Serif',serif;font-size:40px">Pantry</span></div>
+      <p>Thinner and more elegant, closest to a magazine. Lighter weight means it sits quieter on the page.</p>
+    </div>
+    <div class="fo card" data-choice="title-system" onclick="toggleSelect(this)">
+      <h4>SF Pro (the iPhone's font)</h4>
+      <div class="pair"><span class="w w3 edge" style="font-size:24px">Shelfw<span class="i">ı</span>se</span><span class="t2" style="font-family:var(--sans);font-weight:700;letter-spacing:-.02em">Pantry</span></div>
+      <p>The plainest. Feels most like a built-in iPhone app and lets the wordmark carry all the personality.</p>
+    </div>
+  </div>
+
+  <div class="row4">
+
+  <!-- PANTRY -->
+  <div class="col">
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="in">
+        <div class="brand"><span class="wm"><span class="w w3 edge" style="font-size:24px">Shelfw<span class="i">ı</span>se</span></span><span class="store">All stores ▾</span></div>
+        <h1 class="t">Pantry</h1>
+        <div class="find"><div class="search"><svg><use href="#i-search"/></svg>Search staples</div><div class="fbtn"><svg><use href="#i-filter"/></svg></div></div>
+        <div class="aisle"><b>Market Basket</b><span>12 ▾</span></div>
+        <div class="it"><div class="im">🥛</div><div class="g"><div class="n">Whole milk</div><div class="s">$3.79 last paid</div></div><span class="add"><svg><use href="#b-add"/></svg></span></div>
+        <div class="it need"><div class="im">🥚</div><div class="g"><div class="n">Eggs, dozen</div><div class="s">$4.29 last paid · on the list</div></div><span class="add on"><svg><use href="#b-on"/></svg></span></div>
+        <div class="it need"><div class="im">🫒</div><div class="g"><div class="n">Olive oil</div><div class="s">$11.99 last paid · on the list</div></div><span class="add on"><svg><use href="#b-on"/></svg></span></div>
+        <div class="it"><div class="im">🍝</div><div class="g"><div class="n">Spaghetti</div><div class="s">2 × $1.89</div></div><span class="add"><svg><use href="#b-add"/></svg></span></div>
+        <div class="it need"><div class="im">🧈</div><div class="g"><div class="n">Butter</div><div class="s">$5.49 last paid · on the list</div></div><span class="add on"><svg><use href="#b-on"/></svg></span></div>
+        <div class="it"><div class="im">🍚</div><div class="g"><div class="n">Jasmine rice</div><div class="s">$8.99 last paid</div></div><span class="add"><svg><use href="#b-add"/></svg></span></div>
+        <div class="it"><div class="im">🧅</div><div class="g"><div class="n">Yellow onions</div><div class="s">$2.49 last paid</div></div><span class="add"><svg><use href="#b-add"/></svg></span></div>
+        <div class="it"><div class="im">🧄</div><div class="g"><div class="n">Garlic</div><div class="s">$0.89 last paid</div></div><span class="add"><svg><use href="#b-add"/></svg></span></div>
+      </div>
+      <div class="dock"><div class="tabs glass" onclick="this.parentNode.classList.toggle('mini')">
+        <span class="on"><svg><use href="#i-pantry"/></svg>Pantry</span><span><svg><use href="#i-list"/></svg>List</span><span><svg><use href="#i-receipt"/></svg>Receipt</span><span><svg><use href="#i-settings"/></svg>Settings</span>
+      </div></div>
+    </div>
+    <p class="cap"><b>One button per staple.</b> Rows on the list get a Fig edge and "on the list" under the name, so a scan down the left side shows what you're buying.</p>
+  </div>
+
+  <!-- FILTER -->
+  <div class="col">
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="in">
+        <div class="brand"><span class="wm"><span class="w w3 edge" style="font-size:24px">Shelfw<span class="i">ı</span>se</span></span><span class="store">All stores ▾</span></div>
+        <h1 class="t">Pantry</h1>
+        <div class="find"><div class="search"><svg><use href="#i-search"/></svg>Search staples</div><div class="fbtn"><svg><use href="#i-filter"/></svg></div></div>
+      </div>
+      <div class="dim"></div>
+      <div class="sheet">
+        <div class="handle"></div>
+        <div class="top"><h2>Filter</h2><span class="reset">Reset</span></div>
+        <div class="grp"><div class="lbl">Show</div>
+          <div class="opts"><span>All staples</span><span class="on">On the list</span></div></div>
+        <div class="field" style="margin-top:16px"><div class="lbl">Category</div><div class="inp dd">All categories<span class="ch">▾</span></div></div>
+        <div class="grp"><div class="lbl">Sort by</div>
+          <div class="opts"><span class="on">Store</span><span>Name</span><span>Category</span><span>Recently changed</span></div></div>
+        <div class="grp">
+          <div class="tog"><span>Only items without a photo</span><i class="sw"></i></div>
+        </div>
+        <div class="apply">Show 4 staples</div>
+      </div>
+    </div>
+    <p class="cap"><b>Category is a dropdown in the filter</b>, next to "All staples / On the list", sort order and the no-photo switch.</p>
+  </div>
+
+  <!-- LIST BY AISLE -->
+  <div class="col">
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="in">
+        <div class="brand"><span class="wm"><span class="w w3 edge" style="font-size:24px">Shelfw<span class="i">ı</span>se</span></span><span class="store">Market Basket ▾</span></div>
+        <h1 class="t">List</h1>
+        <div class="ctag"><div class="price"><span class="d">$</span>13<sup>40</sup></div><div class="side"><div class="k">Left to spend</div>$61.60 of $75</div><div class="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="e"></i><i class="e"></i></div></div>
+        <div class="lbar"><span class="cnt">To get<span>6</span></span><span class="gbtn"><svg><use href="#i-group"/></svg>By aisle ▾</span></div>
+        <div class="gh"><span class="aisleno">Aisle 1</span><span class="ct">2</span></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🍋</div><div class="g"><div class="n">Lemons</div><div class="s">3 × $0.79</div></div><div class="price"><span class="d">$</span>2<sup>37</sup></div></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🌿</div><div class="g"><div class="n">Fresh basil</div><div class="s">No price yet · not counted</div></div><div class="price" style="color:var(--pebble)">—</div></div>
+        <div class="gh"><span class="aisleno">Aisle 4</span><span class="ct">2</span></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🫒</div><div class="g"><div class="n">Olive oil</div><div class="s">1 × $11.99</div></div><div class="price"><span class="d">$</span>11<sup>99</sup></div></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🍝</div><div class="g"><div class="n">Spaghetti</div><div class="s">2 × $1.89</div></div><div class="price"><span class="d">$</span>3<sup>78</sup></div></div>
+        <div class="gh"><span class="aisleno">Aisle 9</span><span class="ct">2</span></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🥚</div><div class="g"><div class="n">Eggs, dozen</div><div class="s">1 × $4.29</div></div><div class="price"><span class="d">$</span>4<sup>29</sup></div></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🧈</div><div class="g"><div class="n">Butter</div><div class="s">1 × $5.49</div></div><div class="price"><span class="d">$</span>5<sup>49</sup></div></div>
+      </div>
+      <div class="dock mini"><div class="tabs glass" onclick="this.parentNode.classList.toggle('mini')">
+        <span><svg><use href="#i-pantry"/></svg>Pantry</span><span class="on"><svg><use href="#i-list"/></svg>List</span><span><svg><use href="#i-receipt"/></svg>Receipt</span><span><svg><use href="#i-settings"/></svg>Settings</span>
+      </div><div class="fin">Finish shopping<i>3</i></div></div>
+    </div>
+    <p class="cap"><b>By aisle shows only aisle numbers</b>, since one aisle can hold several kinds of food (olive oil and spaghetti share aisle 4 here).</p>
+  </div>
+
+  <!-- LIST BY CATEGORY -->
+  <div class="col">
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="in">
+        <div class="brand"><span class="wm"><span class="w w3 edge" style="font-size:24px">Shelfw<span class="i">ı</span>se</span></span><span class="store">Market Basket ▾</span></div>
+        <h1 class="t">List</h1>
+        <div class="ctag"><div class="price"><span class="d">$</span>13<sup>40</sup></div><div class="side"><div class="k">Left to spend</div>$61.60 of $75</div><div class="meter"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i class="e"></i><i class="e"></i></div></div>
+        <div class="lbar"><span class="cnt">To get<span>6</span></span><span class="gbtn"><svg><use href="#i-group"/></svg>By category ▾</span></div>
+        <div class="gh"><span class="lab">Produce</span><span class="ct">2</span></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🍋</div><div class="g"><div class="n">Lemons</div><div class="s">3 × $0.79</div></div><div class="price"><span class="d">$</span>2<sup>37</sup></div></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🌿</div><div class="g"><div class="n">Fresh basil</div><div class="s">No price yet · not counted</div></div><div class="price" style="color:var(--pebble)">—</div></div>
+        <div class="gh"><span class="lab">Oils &amp; condiments</span><span class="ct">1</span></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🫒</div><div class="g"><div class="n">Olive oil</div><div class="s">1 × $11.99</div></div><div class="price"><span class="d">$</span>11<sup>99</sup></div></div>
+        <div class="gh"><span class="lab">Pasta &amp; grains</span><span class="ct">1</span></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🍝</div><div class="g"><div class="n">Spaghetti</div><div class="s">2 × $1.89</div></div><div class="price"><span class="d">$</span>3<sup>78</sup></div></div>
+        <div class="gh"><span class="lab">Dairy &amp; eggs</span><span class="ct">2</span></div>
+        <div class="it slim"><div class="ck"></div><div class="im">🥚</div><div class="g"><div class="n">Eggs, dozen</div><div class="s">1 × $4.29</div></div><div class="price"><span class="d">$</span>4<sup>29</sup></div></div>
+      </div>
+      <div class="dock mini"><div class="tabs glass" onclick="this.parentNode.classList.toggle('mini')">
+        <span><svg><use href="#i-pantry"/></svg>Pantry</span><span class="on"><svg><use href="#i-list"/></svg>List</span><span><svg><use href="#i-receipt"/></svg>Receipt</span><span><svg><use href="#i-settings"/></svg>Settings</span>
+      </div><div class="fin">Finish shopping<i>3</i></div></div>
+    </div>
+    <p class="cap"><b>By category shows only category names</b>, the same at every store.</p>
+  </div>
+
+  <!-- EDIT -->
+  <div class="col">
+    <div class="ph">
+      <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+      <div class="in">
+        <div class="brand"><span class="wm"><span class="w w3 edge" style="font-size:24px">Shelfw<span class="i">ı</span>se</span></span><span class="store">All stores ▾</span></div>
+        <h1 class="t">Pantry</h1>
+      </div>
+      <div class="dim"></div>
+      <div class="sheet" style="padding-bottom:20px">
+        <div class="handle"></div>
+        <div class="edit-head"><div class="im">🫒</div><div class="g"><div class="inp" style="font-weight:650">Olive oil</div></div></div>
+        <div class="two" style="margin-top:6px">
+          <div class="field"><div class="lbl">Store</div><div class="inp dd">Market Basket<span class="ch">▾</span></div></div>
+        </div>
+        <div class="two">
+          <div class="field"><div class="lbl">Category</div><div class="inp dd">Oils &amp; condiments<span class="ch">▾</span></div></div>
+          <div class="field" style="flex:0 0 92px"><div class="lbl">Aisle</div><div class="inp dd">4<span class="ch">▾</span></div></div>
+        </div>
+        <div class="two">
+          <div class="field"><div class="lbl">Price</div><div class="money"><div class="inp"><span class="cur">$</span>11.99</div></div></div>
+          <div class="field" style="flex:0 0 132px"><div class="lbl">Usual qty</div><div class="stepper"><b>−</b><span>1</span><b>+</b></div></div>
+        </div>
+        <div class="src"><i>Receipt</i>From Market Basket receipt, 23 Nov. Edit it any time; the next receipt will update it again.</div>
+        <div class="apply">Save</div>
+      </div>
+    </div>
+    <p class="cap"><b>Category is a dropdown, and price is editable.</b> A line under the price says where it came from: a receipt (with date) or "Entered by you".</p>
+  </div>
+
+  </div>
+</div>
