@@ -12,7 +12,11 @@ main { padding: 4px 16px 16px; }
 .wm-i { position: relative; }
 .wm-i::before { content: ''; position: absolute; left: 52%; top: .1em; width: .27em; height: .17em; transform: translateX(-50%) rotate(-8deg); border-radius: .04em .08em .08em .04em; background: var(--butter);
   -webkit-mask: radial-gradient(circle at .07em 50%, transparent .028em, #000 .032em); mask: radial-gradient(circle at .07em 50%, transparent .028em, #000 .032em); }
-.wm-edge .wm-i::before { filter: drop-shadow(0 0 .5px var(--f950)) drop-shadow(0 0 .5px var(--f950)); }
+/* Light backgrounds: ::before becomes a slightly larger Fig 950 plate and ::after the Butter tag on top. (A filter on a masked element is clipped by its own mask.) */
+.wm-edge .wm-i::before { background: var(--f950); top: .08em; width: .31em; height: .21em; border-radius: .06em .1em .1em .06em;
+  -webkit-mask: radial-gradient(circle at .09em 50%, transparent .028em, #000 .032em); mask: radial-gradient(circle at .09em 50%, transparent .028em, #000 .032em); }
+.wm-edge .wm-i::after { content: ''; position: absolute; left: 52%; top: .1em; width: .27em; height: .17em; transform: translateX(-50%) rotate(-8deg); border-radius: .04em .08em .08em .04em; background: var(--butter);
+  -webkit-mask: radial-gradient(circle at .07em 50%, transparent .028em, #000 .032em); mask: radial-gradient(circle at .07em 50%, transparent .028em, #000 .032em); }
 
 /* Header */
 .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: calc(10px + env(safe-area-inset-top)) 16px 8px; position: sticky; top: 0; background: var(--paper); z-index: 5; }
