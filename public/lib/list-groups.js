@@ -2,6 +2,10 @@
 const NUM = /^\d+$/;
 const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
+export function aisleTitle(a) {
+  return a == null || a === '' ? 'No aisle' : NUM.test(String(a).trim()) ? `Aisle ${a}` : String(a);
+}
+
 export function compareAisles(a, b) {
   const an = a == null || a === '';
   const bn = b == null || b === '';
@@ -28,7 +32,7 @@ export function groupList(lines, by, categories, ticked, tickedToBottom) {
     }
     groups = [...map.keys()].sort(compareAisles).map((a) => ({
       key: a === null ? 'aisle:none' : `aisle:${a}`,
-      title: a === null ? 'No aisle' : `Aisle ${a}`,
+      title: aisleTitle(a),
       items: map.get(a),
     }));
   } else if (by === 'category') {
@@ -50,8 +54,7 @@ export function groupList(lines, by, categories, ticked, tickedToBottom) {
     groups = [{ key: 'all', title: null, items: rest }];
   }
 
-  groups = groups.map((g) => ({ ...g, items: [...g.items].sort(byName) })).filter((g) => g.items.length || by === 'none');
-  if (by === 'none' && tickedToBottom) groups = groups.filter((g) => g.items.length);
+  groups = groups.map((g) => ({ ...g, items: [...g.items].sort(byName) })).filter((g) => g.items.length);
   if (cart.length) groups.push({ key: 'cart', title: 'In the cart', items: cart.sort(byName) });
   return groups;
 }

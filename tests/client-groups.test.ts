@@ -16,6 +16,12 @@ describe('list groups', () => {
     const g = groupList([line(1, 'b', '4'), line(2, 'a', '4'), line(3, 'c', null), line(4, 'd', '2')], 'aisle', cats, new Set(), false);
     expect(g.map((x: any) => x.title)).toEqual(['Aisle 2', 'Aisle 4', 'No aisle']);
     expect(g[1].items.map((i: any) => i.name)).toEqual(['a', 'b']);
+    const t = groupList([line(1, 'x', 'Deli'), line(2, 'y', '3')], 'aisle', cats, new Set(), false);
+    expect(t.map((x: any) => x.title)).toEqual(['Aisle 3', 'Deli']);
+  });
+
+  it('none_with_no_lines_is_empty', () => {
+    expect(groupList([], 'none', cats, new Set(), false)).toEqual([]);
   });
 
   it('group_by_category_titles_only_category', () => {
