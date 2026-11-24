@@ -47,7 +47,13 @@ function drawPill(view) {
   storeBtn.setAttribute('aria-label', `Store: ${s ? s.name : 'All stores'}`);
 }
 
+// Each render gets a number. A view whose async work finishes after a newer render has started
+// checks ctx.stale() and does nothing, so it can't write into the page or the dock.
+let renderSeq = 0;
+
 async function render() {
+  const seq = ++renderSeq;
+  const stale = () => seq !== renderSeq;
   const view = route();
   document.getElementById('dock-action')?.replaceChildren(); // the List fills this with its Finish pill
   drawPill(view);
@@ -58,8 +64,8 @@ async function render() {
     return;
   }
   if (!state.stores.length) { renderFirstRun(); return; }
-  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state }); }
-  catch (err) { root.innerHTML = ''; toast(err.message); }
+  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale }); }
+  catch (err) { if (stale()) return; root.innerHTML = ''; toast(err.message); }
 }
 
 function renderFirstRun() {

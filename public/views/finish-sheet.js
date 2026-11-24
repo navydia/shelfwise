@@ -1,5 +1,6 @@
 import * as api from '../api.js';
 import { openSheet } from '../ui/sheet.js';
+import { budgetKey } from './budget-sheet.js';
 
 const OFFLINE = /^You are offline/;
 
@@ -66,12 +67,17 @@ export function openFinishSheet(store, tickedItems, remainingItems, { onDone } =
 // Used by the Finish pill and the forgotten-trip cards. onDone (may return a promise, e.g. a re-render) runs after a successful finish; the toast follows it.
 export async function finishForStore(store, { toast, onDone }) {
   try {
-    const data = await api.getList(store.id, api.store.get(`sw-budget-${store.id}`, ''));
+    const data = await api.getList(store.id, api.store.get(budgetKey(store.id), ''));
     const lines = [...data.lines, ...data.unpriced];
     const ticks = new Set(api.trips.get(store.id).ids);
     const ticked = lines.filter((l) => ticks.has(l.id));
     const remaining = lines.filter((l) => !ticks.has(l.id));
-    if (!ticked.length) { api.trips.clear(store.id); onDone?.(0); return; } // stale ticks only: nothing to finish
+    if (!ticked.length) { // stale ticks only: nothing to finish
+      api.trips.clear(store.id);
+      await onDone?.(0);
+      toast('Those items were already off the list.');
+      return;
+    }
     openFinishSheet(store, ticked, remaining, { onDone: async (n) => { await onDone?.(n); toast(doneMessage(n)); } });
   } catch (err) { toast(err.message); }
 }

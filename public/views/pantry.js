@@ -47,6 +47,7 @@ export async function renderPantry(root, ctx) {
   const storeId = ctx.storeId ?? null;
   const singleStore = storeId != null;
   const [items, categories] = await Promise.all([api.getItems(storeId ?? 'all'), api.getCategories()]);
+  if (ctx.stale?.()) return;
   const storeName = (id) => stores.find((s) => s.id === id)?.name ?? '';
   let opts = loadFilter(categories, singleStore);
   const folds = api.store.get(FOLD_KEY, {}) ?? {};

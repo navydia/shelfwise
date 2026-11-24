@@ -25,6 +25,7 @@ export async function renderReceipt(root, ctx) {
   const { storeId, toast, state } = ctx;
   const store = state?.stores?.find((s) => s.id === storeId);
   const items = await api.getItems(storeId);
+  if (ctx.stale?.()) return;
   const itemById = new Map(items.map((i) => [i.id, i]));
   root.innerHTML = '';
 

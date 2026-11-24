@@ -66,6 +66,7 @@ export async function renderList(root, ctx) {
   const store = state.stores.find((s) => s.id === storeId);
   const budget = api.store.get(budgetKey(storeId), '');
   const [data, categories] = await Promise.all([api.getList(storeId, budget), api.getCategories()]);
+  if (ctx.stale?.()) return; // a newer render has started: leave the page and dock alone
   const lines = [...data.lines, ...data.unpriced];
   const redraw = () => renderList(root, ctx);
   let group = loadGroup(storeId);
