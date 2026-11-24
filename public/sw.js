@@ -7,7 +7,7 @@ const SHELL = [
   '/', '/app.js', '/api.js', '/app.css', '/tokens.css', '/manifest.webmanifest', '/icon-180.png', '/icon-512.png',
   '/views/pantry.js', '/views/list.js', '/views/receipt.js',
   '/ui/wordmark.js', '/ui/icons.js', '/ui/sheet.js', '/ui/tabbar.js', '/ui/store-picker.js',
-  '/views/store-sheet.js', '/views/filter-sheet.js', '/ui/trip-cards.js', '/views/settings.js',
+  '/views/store-sheet.js', '/views/staple-sheet.js', '/views/filter-sheet.js', '/ui/trip-cards.js', '/views/settings.js',
   '/lib/budget-tag.js', '/lib/list-groups.js', '/lib/money.js', '/lib/pantry-view.js', '/lib/trip.js',
   '/fonts/figtree-800.woff2', '/fonts/bricolage-700.woff2', '/fonts/bricolage-800.woff2', '/fonts/plex-mono-400.woff2',
 ];

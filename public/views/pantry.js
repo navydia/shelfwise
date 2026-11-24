@@ -4,13 +4,14 @@ import { renderTripCards } from '../ui/trip-cards.js';
 import { pantryView } from '../lib/pantry-view.js';
 import { fmt } from '../lib/money.js';
 import { openFilterSheet, defaultSort } from './filter-sheet.js';
+import { openStapleSheet } from './staple-sheet.js';
 
 const FILTER_KEY = 'sw-pantry-filter';
 const FOLD_KEY = 'sw-fold';
 
-// Task 11 swaps these in. openStapleSheet(item | null, { storeId, onSaved }); finishTrip(storeId, { redraw }).
+// openStapleSheet(item | null, { stores, categories, defaultStoreId, onSaved, onDeleted }); finishTrip(storeId, { redraw }).
 export const pantryHooks = {
-  openStapleSheet() {},
+  openStapleSheet,
   finishTrip() {},
 };
 
@@ -71,7 +72,9 @@ export async function renderPantry(root, ctx) {
   root.append(title, tripBox, find, active, sections);
 
   const redraw = () => renderPantry(root, ctx);
-  const openStaple = (item) => pantryHooks.openStapleSheet(item, { storeId, onSaved: redraw });
+  const openStaple = (item) => pantryHooks.openStapleSheet(item, {
+    stores, categories, defaultStoreId: storeId ?? stores.find((s) => s.isMain)?.id, onSaved: redraw, onDeleted: redraw,
+  });
   addBtn.addEventListener('click', () => openStaple(null));
 
   function drawTrips() {

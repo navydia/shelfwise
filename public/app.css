@@ -158,3 +158,29 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .opts { display: flex; flex-wrap: wrap; gap: 6px; }
 .opt { font-family: var(--font-disp); font-weight: 700; font-size: 13.5px; padding: 0 13px; border-radius: 12px; background: var(--paper); color: var(--f900); }
 .opt.on { background: var(--f900); color: var(--butter); }
+
+/* Staple sheet */
+.staple-form { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
+.staple-form input, .staple-form select { min-width: 0; max-width: 100%; }
+.staple-form .grow { flex: 1; min-width: 0; }
+.staple-form select { width: 100%; font-size: 16px; color: var(--f950); background: var(--paper); font-weight: 400; }
+.edit-head { display: flex; gap: 12px; align-items: center; padding-bottom: 8px; }
+.photo-pick { position: relative; flex: none; width: 60px; height: 60px; cursor: pointer; }
+.photo-pick input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.photo-pick .im { display: grid; place-items: center; width: 60px; height: 60px; border-radius: 14px; background: var(--paper) center / cover; font-family: var(--font-disp); font-weight: 800; font-size: 28px; color: var(--stone); }
+.photo-pick .chg { position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); font-family: var(--font-disp); font-weight: 700; font-size: 10px; background: var(--f900); color: var(--butter); padding: 2px 6px; border-radius: 6px; pointer-events: none; }
+.photo-pick:focus-within .im { outline: 3px solid var(--fig); outline-offset: 2px; }
+.new-row { display: flex; gap: 8px; }
+.new-row input { flex: 1; min-width: 0; font-size: 16px; background: var(--paper); }
+.new-row[hidden] { display: none; }
+.staple-form .two { display: grid; grid-template-columns: minmax(0, 1fr) 132px; gap: 12px; align-items: start; }
+.staple-form .field { grid-template-columns: minmax(0, 1fr); }
+.money { display: flex; align-items: center; gap: 4px; min-height: var(--tap); padding: 0 12px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
+.money .cur { font-family: var(--font-disp); font-weight: 700; font-size: 18px; color: var(--stone); }
+.money input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; font-family: var(--font-disp); font-weight: 800; font-size: 18px; color: var(--f950); }
+.stepper { display: flex; align-items: center; justify-content: space-between; min-height: var(--tap); width: 132px; padding: 0 4px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
+.stepper button { width: 36px; min-height: 36px; height: 36px; padding: 0; border-radius: 9px; background: var(--card); font-family: var(--font-disp); font-size: 18px; color: var(--f900); }
+.stepper button:disabled { color: var(--stone); opacity: .6; }
+.stepper .n { font-family: var(--font-disp); font-weight: 800; font-size: 18px; color: var(--f950); }
+.src { font-size: 12px; color: var(--stone); display: flex; align-items: center; gap: 6px; margin-top: -4px; }
+.src i { font-style: normal; font-family: var(--font-disp); font-weight: 700; font-size: 11px; background: var(--plum-t); color: var(--fig-2); padding: 2px 6px; border-radius: 5px; }
