@@ -50,7 +50,8 @@ export async function renderReview(root, { storeId, toast }) {
     info.className = 'grow';
     info.innerHTML = `<div class="name"></div><div class="sub"></div>`;
     info.querySelector('.name').textContent = item.name;
-    info.querySelector('.sub').textContent = item.lastPriceCents == null ? 'no price yet' : `$${(item.lastPriceCents / 100).toFixed(2)}`;
+    const price = item.lastPriceCents == null ? 'no price yet' : `$${(item.lastPriceCents / 100).toFixed(2)}`;
+    info.querySelector('.sub').textContent = item.usualQty > 1 ? `${item.usualQty} × ${price}` : price;
 
     const seg = document.createElement('div');
     seg.className = 'seg'; seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', `${item.name} stock level`);
@@ -65,7 +66,44 @@ export async function renderReview(root, { storeId, toast }) {
       });
       seg.append(b);
     }
+    info.style.cursor = 'pointer';
+    info.setAttribute('role', 'button');
+    info.setAttribute('aria-label', `Edit ${item.name}`);
+    info.addEventListener('click', () => openEdit(item, () => renderReview(root, { storeId, toast })));
     row.append(photoBtn, file, info, seg);
     root.append(row);
   }
+}
+
+function openEdit(item, done) {
+  const dialog = document.getElementById('dialog');
+  dialog.innerHTML = `<form method="dialog" style="display:grid;gap:10px">
+    <label>Name<br><input type="text" name="name" style="width:100%"></label>
+    <label>Usual quantity (used for the list subtotal)<br><input type="number" name="qty" min="1" step="1" inputmode="numeric" style="width:100%"></label>
+    <p class="msg" hidden></p>
+    <button type="submit" value="save">Save</button>
+    <button type="button" class="ghost" data-act="delete">Delete item</button>
+    <button type="button" class="ghost" data-act="cancel">Cancel</button>
+  </form>`;
+  const form = dialog.querySelector('form');
+  const msg = form.querySelector('.msg');
+  form.elements.name.value = item.name;
+  form.elements.qty.value = item.usualQty;
+  const fail = (text) => { msg.textContent = text; msg.hidden = false; };
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const qty = Number(form.elements.qty.value);
+    if (!Number.isInteger(qty) || qty < 1) return fail('Quantity must be a whole number, 1 or more.');
+    try {
+      await api.patchItem(item.id, { name: form.elements.name.value, usualQty: qty });
+      dialog.close(); done();
+    } catch (err) { fail(err.message); }
+  });
+  form.querySelector('[data-act=cancel]').addEventListener('click', () => dialog.close());
+  const del = form.querySelector('[data-act=delete]');
+  del.addEventListener('click', async () => {
+    if (del.dataset.armed !== '1') { del.dataset.armed = '1'; del.textContent = 'Yes, delete'; return; }
+    try { await api.deleteItem(item.id); dialog.close(); done(); } catch (err) { fail(err.message); }
+  });
+  dialog.showModal();
 }

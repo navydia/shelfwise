@@ -60,7 +60,7 @@ Open the `https://….ts.net` address in Safari, tap Share, then **Add to Home S
 
 Receipt reading uses tesseract.js on the server. The first receipt makes the server download English language data (about 10 MB) into `SHELFWISE_DATA/tessdata`, so the server needs internet access that one time.
 
-This was not testable where the app was built. Upload one real receipt and look at the lines it finds. If lines are missing or garbled, try a flatter, better-lit photo. Reading quality is the most likely thing to need tuning.
+This was not testable where the app was built. Upload one real receipt and look at the lines it finds. If the app says receipt reading isn't working, the reason is in the server log (`journalctl -u shelfwise`), most often that the language data could not be downloaded. If lines are missing or garbled, try a flatter, better-lit photo. Reading quality is the most likely thing to need tuning.
 
 ## 6. Backups
 
@@ -74,8 +74,11 @@ It saves a dated archive of the database and photos and is safe to run while the
 15 3 * * * cd /path/to/shelfwise && SHELFWISE_DATA=/var/lib/shelfwise ./scripts/backup.sh /path/to/backups
 ```
 
-To restore, stop the server, then unpack the archive into the data folder:
+To restore, stop the server first, remove the database's log files, then unpack the archive into the data folder. Leftover `-wal`/`-shm` files can silently replay newer changes over the restored copy, so don't skip the `rm`:
 
 ```sh
+sudo systemctl stop shelfwise
+rm -f /var/lib/shelfwise/shelfwise.db-wal /var/lib/shelfwise/shelfwise.db-shm
 tar -xzf shelfwise-YYYY-MM-DD.tar.gz -C /var/lib/shelfwise
+sudo systemctl start shelfwise
 ```

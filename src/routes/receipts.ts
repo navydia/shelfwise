@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
+import fs from 'node:fs';
 import path from 'node:path';
 import type { Db } from '../db';
 import { saveReceiptPhoto } from '../lib/photos';
@@ -23,11 +24,13 @@ export function receiptsRouter(db: Db, dataDir: string, ocr: Ocr = defaultOcr): 
     } catch {
       return res.status(400).json({ error: 'not a readable image' });
     }
-    let text = '';
+    let text: string;
     try {
       text = await ocr(path.join(dataDir, 'photos', photo));
-    } catch {
-      text = '';
+    } catch (err) {
+      console.error('Receipt reading failed:', err);
+      fs.rmSync(path.join(dataDir, 'photos', photo), { force: true });
+      return res.status(503).json({ error: 'Receipt reading is not working on the server right now. Check the server log.' });
     }
     const parsed = parseReceiptText(text);
     const items = db.prepare('select id, name from items where store_id = ?').all(storeId) as { id: number; name: string }[];

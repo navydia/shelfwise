@@ -2,10 +2,14 @@ import * as api from '../api.js';
 
 export async function renderList(root, { storeId, toast }) {
   const budgetKey = `sw-budget-${storeId}`;
-  const checkedKey = `sw-checked-${storeId}`;
   const budget = api.store.get(budgetKey, '');
-  const data = await api.getList(storeId, budget);
-  const checked = new Set(api.store.get(checkedKey, []));
+  const [data, storeItems] = await Promise.all([api.getList(storeId, budget), api.getItems(storeId)]);
+  const onList = new Set([...data.lines, ...data.unpriced].map((l) => l.id));
+  const checked = new Set(api.store.get(api.CHECKED_KEY, []));
+  // Drop marks for items of this store that are no longer on its list.
+  const storeIds = new Set(storeItems.map((i) => i.id));
+  for (const id of [...checked]) if (storeIds.has(id) && !onList.has(id)) checked.delete(id);
+  api.store.set(api.CHECKED_KEY, [...checked]);
   const redraw = () => renderList(root, { storeId, toast });
   root.innerHTML = '';
 
@@ -48,7 +52,7 @@ export async function renderList(root, { storeId, toast }) {
     check.textContent = checked.has(l.id) ? '✓' : '';
     check.addEventListener('click', () => {
       if (checked.has(l.id)) checked.delete(l.id); else checked.add(l.id);
-      api.store.set(checkedKey, [...checked]);
+      api.store.set(api.CHECKED_KEY, [...checked]);
       el.classList.toggle('done'); check.textContent = checked.has(l.id) ? '✓' : '';
     });
     const thumb = l.photo ? Object.assign(document.createElement('img'), { className: 'thumb', src: `/photos/${l.photo}`, alt: '' })

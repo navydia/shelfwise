@@ -87,3 +87,16 @@ describe('receipts API', () => {
     expect(again).toMatchObject({ proposedItemId: bananas.id, reason: 'alias' });
   });
 });
+
+describe('receipts API: reader failure', () => {
+  it('ocr_failure_returns_503_and_leaves_no_receipt_row', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sw-r-')); dirs.push(dir);
+    const { api, db } = makeApp({ dataDir: dir, readReceiptText: async () => { throw new Error('tessdata download failed'); } });
+    const store = (await api.post('/api/stores').send({ name: 'Main' })).body;
+    const res = await api.post('/api/receipts').field('storeId', String(store.id)).attach('photo', await img(), 'r.png');
+    expect(res.status).toBe(503);
+    expect(res.body.error).toMatch(/receipt reading/i);
+    expect(db.prepare('select count(*) c from receipts').get()).toEqual({ c: 0 });
+    expect(fs.readdirSync(path.join(dir, 'photos'))).toHaveLength(0);
+  });
+});

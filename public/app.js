@@ -6,7 +6,7 @@ import { renderReceipt } from './views/receipt.js';
 const root = document.getElementById('view');
 const select = document.getElementById('store');
 const offlineBar = document.getElementById('offline');
-const state = { stores: [], storeId: null };
+const state = { stores: [], storeId: null, loadError: null };
 
 api.onOffline((on) => { offlineBar.hidden = !on; });
 
@@ -29,6 +29,12 @@ async function render() {
   document.querySelectorAll('.tabs a').forEach((a) => {
     if (a.dataset.tab === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
   });
+  if (state.loadError) {
+    root.innerHTML = '<p class="empty"></p><button id="retry" style="width:100%">Try again</button>';
+    root.querySelector('.empty').textContent = `${state.loadError} Your data is safe on the server.`;
+    document.getElementById('retry').addEventListener('click', async () => { await loadStores(); render(); });
+    return;
+  }
   if (!state.stores.length) {
     root.innerHTML = '<form class="add" id="first"><input type="text" name="name" placeholder="Name your main store" aria-label="Main store name"><button>Create</button></form><p class="empty">Start by naming the store you shop at most.</p>';
     document.getElementById('first').addEventListener('submit', async (e) => {
@@ -45,7 +51,8 @@ async function render() {
 }
 
 async function loadStores() {
-  try { state.stores = await api.getStores(); } catch (err) { toast(err.message); state.stores = []; }
+  try { state.stores = await api.getStores(); state.loadError = null; }
+  catch (err) { state.stores = []; state.loadError = "Can't reach Shelfwise right now. Check that Tailscale is on."; }
   if (!state.stores.some((s) => s.id === state.storeId)) state.storeId = state.stores[0]?.id ?? null;
   select.innerHTML = '';
   for (const s of state.stores) select.append(new Option(s.name, s.id, false, s.id === state.storeId));
@@ -92,11 +99,27 @@ function syncFlag() { flagBtn.hidden = !state.stores.length; }
 await loadStores();
 render();
 
-// Warm the offline cache so every screen has saved data for a store trip.
-for (const s of state.stores) {
-  api.getItems(s.id).catch(() => {});
-  api.getList(s.id, api.store.get(`sw-budget-${s.id}`, '')).catch(() => {});
+// Warm the offline cache so every screen has saved data for a store trip. This waits for the
+// service worker to be in control, otherwise the very first launch would cache nothing.
+async function warmCache() {
+  if ('serviceWorker' in navigator) {
+    try {
+      await navigator.serviceWorker.ready;
+      if (!navigator.serviceWorker.controller) {
+        await new Promise((resolve) => {
+          navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+          setTimeout(resolve, 2000);
+        });
+      }
+    } catch { /* continue without the worker */ }
+  }
+  api.getStores().catch(() => {});
+  for (const s of state.stores) {
+    api.getItems(s.id).catch(() => {});
+    api.getList(s.id, api.store.get(`sw-budget-${s.id}`, '')).catch(() => {});
+  }
 }
+warmCache();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => { /* offline cache unavailable: app still works online */ });
