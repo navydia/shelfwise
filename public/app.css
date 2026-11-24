@@ -136,7 +136,7 @@ button.store-banner { width: 100%; min-height: var(--tap); text-align: left; }
 .row-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; background: transparent; text-align: left; border-radius: 10px; }
 .thumb { width: 44px; height: 44px; flex: none; border-radius: 10px; object-fit: cover; background: var(--paper); display: grid; place-items: center; font-family: var(--font-disp); font-weight: 800; font-size: 18px; color: var(--stone); }
 .row .info { min-width: 0; flex: 1; }
-.row .nm { color: var(--f950); font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .nm { color: var(--f950); font-size: 15px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row .sub { margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 mark { background: var(--butter); color: var(--f950); border-radius: 3px; padding: 0 1px; }
 .onlist-btn { flex: none; width: 44px; height: 44px; padding: 0; display: grid; place-items: center; border-radius: 12px; background: var(--paper); color: var(--stone); }

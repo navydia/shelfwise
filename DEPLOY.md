@@ -84,3 +84,15 @@ rm -f /var/lib/shelfwise/shelfwise.db-wal /var/lib/shelfwise/shelfwise.db-shm
 tar -xzf shelfwise-YYYY-MM-DD.tar.gz -C /var/lib/shelfwise
 sudo systemctl start shelfwise
 ```
+
+## Upgrading
+
+Back up first, then pull the new version and restart:
+
+```sh
+./scripts/backup.sh /path/to/backups
+git pull && npm ci
+sudo systemctl restart shelfwise
+```
+
+The first start after upgrading migrates the database automatically, and you don't need to do anything. Staples that were marked **Low** or **Out** are now "on the list", so your shopping list looks the same as before. Ticks you made in the store before the upgrade are cleared, so you'll start with nothing ticked. If something looks wrong, restore the backup as described above.
