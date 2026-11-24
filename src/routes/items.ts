@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import multer from 'multer';
 import type { Db } from '../db';
+import { saveItemPhoto } from '../lib/photos';
 
 export type ItemRow = {
   id: number; name: string; store_id: number; state: string; usual_qty: number;
@@ -13,8 +15,9 @@ export const toItem = (r: ItemRow) => ({
 const STATES = ['stocked', 'low', 'out'];
 const isIntOrNull = (v: unknown) => v === null || (Number.isInteger(v) && (v as number) >= 0);
 
-export function itemsRouter(db: Db): Router {
+export function itemsRouter(db: Db, dataDir: string): Router {
   const r = Router();
+  const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 15 * 1024 * 1024 } });
   const get = (id: number) => db.prepare('select * from items where id = ?').get(id) as ItemRow | undefined;
 
   r.get('/', (req, res) => {
@@ -64,6 +67,19 @@ export function itemsRouter(db: Db): Router {
       return res.status(409).json({ error: 'item already exists in this store' });
     }
     res.json(toItem(get(id)!));
+  });
+
+  r.post('/:id/photo', upload.single('photo'), async (req, res) => {
+    const id = Number(req.params.id);
+    if (!get(id)) return res.status(404).json({ error: 'not found' });
+    if (!req.file) return res.status(400).json({ error: 'photo required' });
+    try {
+      const name = await saveItemPhoto(dataDir, req.file.buffer);
+      db.prepare('update items set photo = ? where id = ?').run(name, id);
+      res.json(toItem(get(id)!));
+    } catch {
+      res.status(400).json({ error: 'not a readable image' });
+    }
   });
 
   r.delete('/:id', (req, res) => {
