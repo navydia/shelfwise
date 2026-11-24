@@ -1,6 +1,7 @@
 import express, { type Express } from 'express';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { Db } from './db';
 import { storesRouter } from './routes/stores';
 import { itemsRouter } from './routes/items';
@@ -24,7 +25,7 @@ export function createApp(db: Db, opts: AppOptions = {}): Express {
   app.use('/api/stores', listRouter(db));
   app.use('/api/items', itemsRouter(db, dataDir));
   app.use('/api/receipts', receiptsRouter(db, dataDir, opts.readReceiptText));
-  app.use(express.static(path.resolve('public')));
+  app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
   app.use('/photos', express.static(path.join(dataDir, 'photos'), { maxAge: '30d', immutable: true }));
   return app;
 }
