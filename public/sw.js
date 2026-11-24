@@ -1,6 +1,6 @@
 // Shelfwise service worker: caches the app shell and saves recent read responses
 // so the list and prices still show with weak or no signal. Writes are never queued.
-const VERSION = 'v9';
+const VERSION = 'v10';
 const SHELL_CACHE = `shelfwise-shell-${VERSION}`;
 const DATA_CACHE = `shelfwise-data-${VERSION}`;
 const SHELL = [

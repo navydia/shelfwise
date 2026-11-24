@@ -25,6 +25,12 @@ export function openBudgetSheet(storeId, current, onSaved) {
   const sheet = openSheet({ title: 'Budget', body });
   body.addEventListener('submit', (e) => {
     e.preventDefault();
+    if (input.value.trim() === '') {
+      api.store.remove(budgetKey(storeId));
+      sheet.close();
+      onSaved?.();
+      return;
+    }
     const cents = parseDollars(input.value);
     if (cents === null || cents === 0) {
       msg.textContent = 'Enter an amount like 75 or 75.50.';

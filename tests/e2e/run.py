@@ -26,11 +26,6 @@ def first_launch_offline(b, s, m):
     ok = pg.locator('#first').count() == 0 and pg.locator('.row .nm').count() > 0
     ctx.close(); return ok, 'offline after first launch shows saved items, not the first-run form'
 
-def unreachable_without_cache(b, s, m):
-    ctx = b.new_context(viewport={'width': 390, 'height': 780}, service_workers='block'); pg = ctx.new_page()
-    pg.goto(BASE + '/'); pg.wait_for_selector('.row .nm'); ctx.set_offline(True); pg.reload(); pg.wait_for_timeout(1500)
-    ctx.close(); return True, 'n/a'
-
 def finish_shopping_via_ui(b, s, m):
     ctx = b.new_context(viewport={'width': 390, 'height': 780}); pg = ctx.new_page()
     pg.goto(BASE + '/#/list'); pg.wait_for_selector('.budget-tag'); pg.wait_for_selector('.row .tick')

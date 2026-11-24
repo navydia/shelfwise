@@ -51,7 +51,7 @@ export function openFinishSheet(store, tickedItems, remainingItems, { onDone } =
     try {
       await api.finishTrip(store.id, tickedItems.map((i) => i.id));
     } catch (err) {
-      msg.textContent = OFFLINE.test(err.message) ? "You're offline. Nothing was changed." : err.message;
+      msg.textContent = OFFLINE.test(err.message) ? "Couldn't reach Shelfwise. Nothing was changed on this phone; check the list before trying again." : err.message;
       msg.hidden = false;
       go.disabled = false;
       return;

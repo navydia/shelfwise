@@ -143,7 +143,8 @@ export async function renderList(root, ctx) {
     if (!lines.length) { sections.append(el('p', 'empty', 'Nothing on this list yet. Add staples from the Pantry, or add something above.')); return; }
     for (const g of groupList(lines, group.by, categories, ticked, group.tickedToBottom)) {
       const sec = el('section', 'sec');
-      if (g.title) sec.append(el('h2', '', g.title));
+      if (g.title && g.key === 'cart') sec.append(el('h2', '', g.title));
+      else if (g.title) { const h = el('h2', 'gh'); h.append(el('span', 'lab', g.title), el('span', 'ct', String(g.items.length))); sec.append(h); }
       const rows = el('div', 'rows');
       for (const l of g.items) rows.append(rowFor(l, ticked.has(l.id)));
       sec.append(rows);

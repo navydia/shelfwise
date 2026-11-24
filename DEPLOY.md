@@ -87,12 +87,17 @@ sudo systemctl start shelfwise
 
 ## Upgrading
 
-Back up first, then pull the new version and restart:
+Back up first and note the commit you are running, then pull the new version and restart:
 
 ```sh
 ./scripts/backup.sh /path/to/backups
+git rev-parse HEAD   # write this down; you need it to roll back
 git pull && npm ci
 sudo systemctl restart shelfwise
 ```
 
-The first start after upgrading migrates the database automatically, and you don't need to do anything. Staples that were marked **Low** or **Out** are now "on the list", so your shopping list looks the same as before. Ticks you made in the store before the upgrade are cleared, so you'll start with nothing ticked. If something looks wrong, restore the backup as described above.
+The first start after upgrading migrates the database automatically, and you don't need to do anything. Staples that were marked **Low** or **Out** are now "on the list", so your shopping list looks the same as before. Ticks you made in the store before the upgrade are cleared, so you'll start with nothing ticked. 
+
+### Rolling back
+
+If something looks wrong, roll back the code and the data together. Stop the app, check out the commit you noted before upgrading (`git checkout <that commit>`), run `npm ci`, restore the backup as described above, then start the app again. Restoring the backup alone while still running the new code would not help: the new code would simply migrate the restored data again on its next start.

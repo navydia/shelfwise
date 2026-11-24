@@ -41,7 +41,8 @@ h2, .label { font-family: var(--font-disp); font-weight: 800; font-size: 12px; t
 /* Rows and store banners */
 .row { display: flex; align-items: center; gap: 12px; background: var(--card); border-radius: 14px; padding: 8px 10px 8px 8px; margin-bottom: 6px; }
 .store-banner { display: flex; justify-content: space-between; align-items: center; gap: 12px; background: var(--store-fig); color: var(--paper); border-radius: 12px; padding: 10px 14px; margin: 0 0 8px; font-family: var(--font-disp); font-weight: 800; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
-.store-banner .count { color: rgba(242, 238, 230, .72); font-weight: 700; }
+.store-banner .count { color: rgba(242, 238, 230, .72); font-weight: 700; flex: none; }
+.store-banner > :first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* Bottom sheet */
 .dim { position: fixed; inset: 0; background: rgba(30, 21, 25, .38); z-index: 30; }
@@ -94,6 +95,7 @@ h2, .label { font-family: var(--font-disp); font-weight: 800; font-size: 12px; t
 
 /* Glass tab bar */
 body { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
+body:has(.finish-pill) { padding-bottom: calc(160px + env(safe-area-inset-bottom)); }
 .dock { position: fixed; left: 14px; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); display: flex; align-items: center; justify-content: flex-start; z-index: 10; pointer-events: none; }
 .dock > * { pointer-events: auto; }
 .glass { background: rgba(251, 249, 245, .76); -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%); border: 1px solid rgba(255, 255, 255, .75);
@@ -129,6 +131,8 @@ body { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
 .empty .link { font-size: inherit; padding: 0; min-height: 0; text-decoration: underline; }
 .sec { margin-bottom: 14px; }
 .sec h2 { margin: 12px 2px 8px; }
+.sec h2.gh { display: flex; align-items: baseline; gap: 8px; font-size: 14px; text-transform: none; letter-spacing: 0; color: var(--f950); }
+.sec h2.gh .ct { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--stone); }
 .sec > .rows[hidden] { display: none; }
 button.store-banner { width: 100%; min-height: var(--tap); text-align: left; }
 .row { position: relative; }

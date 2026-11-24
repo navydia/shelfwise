@@ -74,7 +74,7 @@ export async function renderPantry(root, ctx) {
 
   const redraw = () => renderPantry(root, ctx);
   const openStaple = (item) => pantryHooks.openStapleSheet(item, {
-    stores, categories, defaultStoreId: storeId ?? stores.find((s) => s.isMain)?.id, onSaved: redraw, onDeleted: redraw,
+    stores, categories, defaultStoreId: storeId ?? stores.find((s) => s.isMain)?.id, onSaved: redraw, onDeleted: redraw, toast,
   });
   addBtn.addEventListener('click', () => openStaple(null));
 
@@ -158,7 +158,7 @@ export async function renderPantry(root, ctx) {
           drawSections();
         });
         wrap.append(banner);
-      } else if (sec.title) wrap.append(el('h2', '', sec.title));
+      } else if (sec.title) { const h = el('h2', 'gh'); h.append(el('span', 'lab', sec.title), el('span', 'ct', String(sec.items.length))); wrap.append(h); }
       for (const item of sec.items) list.append(rowFor(item, v, q));
       wrap.append(list);
       sections.append(wrap);

@@ -27,7 +27,7 @@ function priceText(cents) {
 }
 
 // item === null opens "New staple" (POST). Errors from the server show inline.
-export function openStapleSheet(item, { stores, categories, defaultStoreId, onSaved, onDeleted } = {}) {
+export function openStapleSheet(item, { stores, categories, defaultStoreId, onSaved, onDeleted, toast } = {}) {
   const isNew = !item;
   const cats = [...categories];
   const origStoreId = item?.storeId ?? null;
@@ -111,7 +111,10 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
     return list;
   }
   async function drawAisles() {
-    const list = [...(await aislesFor(storeId))];
+    const forStore = storeId;
+    const fetched = await aislesFor(forStore);
+    if (forStore !== storeId) return; // the store changed while this fetch was pending; a newer draw owns the dropdown
+    const list = [...fetched];
     if (aisle != null && !list.includes(aisle)) { list.push(aisle); list.sort(compareAisles); }
     f.aisle.replaceChildren();
     opt(f.aisle, '', 'None');
@@ -212,7 +215,7 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
         saved = await api.createItem({ name, storeId, usualQty: qty, categoryId, aisle, lastPriceCents: cents });
         if (photoFile) {
           // The staple exists now; a failed photo upload should not lose it.
-          try { saved = await api.uploadItemPhoto(saved.id, photoFile); } catch { /* keep the staple */ }
+          try { saved = await api.uploadItemPhoto(saved.id, photoFile); } catch { toast?.("Saved, but the photo didn't upload."); }
         }
       } else {
         const patch = {};

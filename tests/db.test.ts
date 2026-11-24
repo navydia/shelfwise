@@ -90,7 +90,7 @@ describe('schema', () => {
       open.push(raw);
       raw.exec(V0_SCHEMA);
       raw.exec("insert into stores(name) values ('S')");
-      raw.exec("insert into items(name,store_id,state) values ('a',1,'low'),('b',1,'out'),('c',1,'stocked')");
+      raw.exec("insert into items(name,store_id,state,usual_qty,photo,last_price_cents) values ('a',1,'low',2,'a.jpg',399),('b',1,'out',3,null,null),('c',1,'stocked',1,'c.jpg',1250)");
       raw.exec("insert into receipts(store_id,created_at,status) values (1,'2026-01-01','confirmed')");
       raw.close();
       open.pop();
@@ -105,6 +105,12 @@ describe('schema', () => {
       expect(onList(db)).toEqual([1, 1, 0]);
       expect((db.prepare('select color from stores').get() as { color: string }).color).toBe('fig');
       expect(count(db, 'receipts')).toBe(1);
+      const kept = () => db.prepare('select name, last_price_cents, photo, usual_qty from items order by id').all();
+      expect(kept()).toEqual([
+        { name: 'a', last_price_cents: 399, photo: 'a.jpg', usual_qty: 2 },
+        { name: 'b', last_price_cents: null, photo: null, usual_qty: 3 },
+        { name: 'c', last_price_cents: 1250, photo: 'c.jpg', usual_qty: 1 },
+      ]);
       expect(version(db)).toBe(1);
       const stamp = (db.prepare('select changed_at from items order by id').get() as { changed_at: string }).changed_at;
       expect(stamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);

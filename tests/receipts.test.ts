@@ -52,6 +52,9 @@ describe('receipts API', () => {
     await api.post(`/api/receipts/${first.id}/confirm`).send({ matches: [{ lineId: firstLine.id, itemId: eggs.id }] });
     const firstAt = (db.prepare('select created_at from receipts where id = ?').get(first.id) as { created_at: string }).created_at;
     expect(await itemFrom()).toMatchObject({ lastPriceCents: 399, priceSource: 'receipt', priceDate: firstAt, onList: false });
+    const row = () => db.prepare('select price_receipt_id, changed_at from items where id = ?').get(eggs.id) as { price_receipt_id: number; changed_at: string };
+    const afterFirst = row();
+    expect(afterFirst.price_receipt_id).toBe(first.id);
 
     await api.patch(`/api/items/${eggs.id}`).send({ lastPriceCents: 500 });
     expect(await itemFrom()).toMatchObject({ lastPriceCents: 500, priceSource: 'manual' });
@@ -63,6 +66,9 @@ describe('receipts API', () => {
     await api.post(`/api/receipts/${second.id}/confirm`).send({ matches: [{ lineId: secondLine.id, itemId: eggs.id }] });
     const secondAt = (db.prepare('select created_at from receipts where id = ?').get(second.id) as { created_at: string }).created_at;
     expect(await itemFrom()).toMatchObject({ lastPriceCents: 425, priceSource: 'receipt', priceDate: secondAt, onList: false });
+    const afterSecond = row();
+    expect(afterSecond.price_receipt_id).toBe(second.id);
+    expect(afterSecond.changed_at).not.toBe(afterFirst.changed_at);
   });
   it('unmatched_lines_change_nothing', async () => {
     const { upload, api, db } = await setup();
