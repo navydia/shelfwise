@@ -21,4 +21,7 @@ describe('ui smoke', () => {
       expect((await api.get(f)).status, f).toBe(200);
     }
   });
+  it('list_view_module_served', async () => {
+    expect((await makeApp().api.get('/views/list.js')).status).toBe(200);
+  });
 });

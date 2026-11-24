@@ -1,5 +1,6 @@
 import * as api from './api.js';
 import { renderReview } from './views/review.js';
+import { renderList } from './views/list.js';
 
 const root = document.getElementById('view');
 const select = document.getElementById('store');
@@ -15,7 +16,7 @@ export function toast(message) {
   setTimeout(() => el.remove(), 5000);
 }
 
-const VIEWS = { review: renderReview };
+const VIEWS = { review: renderReview, list: renderList };
 
 function route() {
   const [, view = 'review'] = location.hash.split('/');
@@ -37,6 +38,7 @@ async function render() {
     });
     return;
   }
+  syncFlag();
   try { await VIEWS[view](root, { storeId: state.storeId, toast, state }); }
   catch (err) { root.innerHTML = ''; toast(err.message); }
 }
@@ -56,6 +58,35 @@ document.getElementById('add-store').addEventListener('click', async () => {
   catch (err) { toast(err.message); }
 });
 window.addEventListener('hashchange', render);
+
+const flagBtn = document.getElementById('quick-flag');
+const dialog = document.getElementById('dialog');
+flagBtn.addEventListener('click', async () => {
+  let items;
+  try { items = (await api.getItems(state.storeId)).filter((i) => i.state === 'stocked'); } catch (err) { toast(err.message); return; }
+  dialog.innerHTML = '<form method="dialog"><input type="search" placeholder="Which one is running low?" aria-label="Search items" autocomplete="off"><ul></ul><button class="ghost" value="close" style="margin-top:8px">Cancel</button></form>';
+  const ul = dialog.querySelector('ul');
+  const search = dialog.querySelector('input');
+  const draw = () => {
+    ul.innerHTML = '';
+    const q = search.value.trim().toLowerCase();
+    for (const i of items.filter((x) => x.name.toLowerCase().includes(q))) {
+      const li = document.createElement('li');
+      const b = document.createElement('button');
+      b.type = 'button'; b.textContent = i.name;
+      b.addEventListener('click', async () => {
+        try { await api.patchItem(i.id, { state: 'low' }); dialog.close(); if (route() !== 'receipt') await render(); toast(`${i.name} marked Low`); }
+        catch (err) { dialog.close(); toast(err.message); }
+      });
+      li.append(b); ul.append(li);
+    }
+    if (!ul.children.length) ul.innerHTML = '<li class="sub" style="padding:10px">Nothing matches.</li>';
+  };
+  search.addEventListener('input', draw); draw();
+  dialog.showModal();
+});
+
+function syncFlag() { flagBtn.hidden = !state.stores.length; }
 
 await loadStores();
 render();
