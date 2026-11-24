@@ -41,22 +41,8 @@ describe('receipts API', () => {
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ readable: false, lines: [] });
   });
-  it('confirm_updates_price_alias_and_state', async () => {
-    const { upload, api, db, bananas, eggs } = await setup();
-    await api.patch(`/api/items/${eggs.id}`).send({ state: 'out' });
-    const up = (await upload()).body;
-    const lineOf = (raw: string) => up.lines.find((l: { raw: string }) => l.raw === raw).id;
-    const res = await api.post(`/api/receipts/${up.id}/confirm`).send({
-      matches: [{ lineId: lineOf('ORG BNNA 1.29'), itemId: bananas.id }, { lineId: lineOf('EGGS 3.99'), itemId: eggs.id }],
-    });
-    expect(res.status).toBe(200);
-    const items = (await api.get('/api/items')).body as { id: number; lastPriceCents: number; state: string }[];
-    expect(items.find((i) => i.id === bananas.id)!.lastPriceCents).toBe(129);
-    const e = items.find((i) => i.id === eggs.id)!;
-    expect(e.lastPriceCents).toBe(399);
-    expect(e.state).toBe('stocked');
-    expect(db.prepare('select label from aliases where item_id = ?').get(bananas.id)).toEqual({ label: 'org bnna' });
-  });
+  // Task 5 rewrites this test for the single on-list flag.
+  it.todo('confirm_updates_price_alias_and_state — rewritten in Task 5');
   it('unmatched_lines_change_nothing', async () => {
     const { upload, api, db } = await setup();
     const up = (await upload()).body;

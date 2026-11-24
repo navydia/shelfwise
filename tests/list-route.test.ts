@@ -15,9 +15,9 @@ async function setup() {
 describe('GET /api/stores/:id/list', () => {
   it('list_contains_only_that_stores_low_and_out_items', async () => {
     const { api, a, b, mk } = await setup();
-    await mk('Rice', a.id, { state: 'low', lastPriceCents: 300 });
+    await mk('Rice', a.id, { onList: true, lastPriceCents: 300 });
     await mk('Salt', a.id, {});
-    await mk('Olives', b.id, { state: 'out', lastPriceCents: 500 });
+    await mk('Olives', b.id, { onList: true, lastPriceCents: 500 });
     const res = await api.get(`/api/stores/${a.id}/list`);
     expect(res.status).toBe(200);
     expect(res.body.lines.map((l: { name: string }) => l.name)).toEqual(['Rice']);
@@ -25,7 +25,7 @@ describe('GET /api/stores/:id/list', () => {
   });
   it('list_applies_budget_status', async () => {
     const { api, a, mk } = await setup();
-    await mk('Rice', a.id, { state: 'low', lastPriceCents: 6000 });
+    await mk('Rice', a.id, { onList: true, lastPriceCents: 6000 });
     const res = await api.get(`/api/stores/${a.id}/list?budget=50`);
     expect(res.body).toMatchObject({ subtotalCents: 6000, budgetCents: 5000, status: 'over' });
   });
