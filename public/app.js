@@ -1,6 +1,7 @@
 import * as api from './api.js';
 import { renderReview } from './views/review.js';
 import { renderList } from './views/list.js';
+import { renderReceipt } from './views/receipt.js';
 
 const root = document.getElementById('view');
 const select = document.getElementById('store');
@@ -16,7 +17,7 @@ export function toast(message) {
   setTimeout(() => el.remove(), 5000);
 }
 
-const VIEWS = { review: renderReview, list: renderList };
+const VIEWS = { review: renderReview, list: renderList, receipt: renderReceipt };
 
 function route() {
   const [, view = 'review'] = location.hash.split('/');
