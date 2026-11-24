@@ -18,7 +18,7 @@ describe('ui smoke', () => {
   });
   it('static_assets_served', async () => {
     const { api } = makeApp();
-    for (const f of ['/app.js', '/app.css', '/api.js', '/views/review.js']) {
+    for (const f of ['/app.js', '/app.css', '/api.js', '/views/pantry.js']) {
       expect((await api.get(f)).status, f).toBe(200);
     }
   });

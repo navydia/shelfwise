@@ -3,6 +3,7 @@ import { mountTabBar } from './ui/tabbar.js';
 import { mountStorePicker } from './ui/store-picker.js';
 import { openStoreSheet } from './views/store-sheet.js';
 import { renderSettings } from './views/settings.js';
+import { renderPantry } from './views/pantry.js';
 
 const root = document.getElementById('view');
 const offlineBar = document.getElementById('offline');
@@ -20,14 +21,14 @@ export function toast(message) {
   setTimeout(() => el.remove(), 5000);
 }
 
-// Pantry, List and Receipt are rebuilt in the following tasks; until then they show a placeholder.
+// List and Receipt are rebuilt in the following tasks; until then they show a placeholder.
 function placeholder(title) {
   return (el) => {
     el.innerHTML = '<h1 class="title"></h1><div class="card"><p class="sub" style="margin:0">Being rebuilt.</p></div>';
     el.querySelector('.title').textContent = title;
   };
 }
-const VIEWS = { pantry: placeholder('Pantry'), list: placeholder('List'), receipt: placeholder('Receipt'), settings: renderSettings };
+const VIEWS = { pantry: renderPantry, list: placeholder('List'), receipt: placeholder('Receipt'), settings: renderSettings };
 
 function route() {
   const [, view = 'pantry'] = location.hash.split('/');
@@ -133,6 +134,7 @@ async function warmCache() {
   }
   api.getStores().catch(() => {});
   api.getCategories().catch(() => {});
+  api.getItems('all').catch(() => {});
   for (const s of state.stores) {
     api.getItems(s.id).catch(() => {});
     api.getList(s.id, api.store.get(`sw-budget-${s.id}`, '')).catch(() => {});
