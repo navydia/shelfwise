@@ -84,29 +84,40 @@ describe('schema', () => {
   it('migrates_old_database_once', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shelfwise-'));
     const file = path.join(dir, 'old.db');
-    const raw = new DatabaseSync(file);
-    raw.exec(V0_SCHEMA);
-    raw.exec("insert into stores(name) values ('S')");
-    raw.exec("insert into items(name,store_id,state) values ('a',1,'low'),('b',1,'out'),('c',1,'stocked')");
-    raw.exec("insert into receipts(store_id,created_at,status) values (1,'2026-01-01','confirmed')");
-    raw.close();
+    const open: { close(): void }[] = [];
+    try {
+      const raw = new DatabaseSync(file);
+      open.push(raw);
+      raw.exec(V0_SCHEMA);
+      raw.exec("insert into stores(name) values ('S')");
+      raw.exec("insert into items(name,store_id,state) values ('a',1,'low'),('b',1,'out'),('c',1,'stocked')");
+      raw.exec("insert into receipts(store_id,created_at,status) values (1,'2026-01-01','confirmed')");
+      raw.close();
+      open.pop();
 
-    const onList = (db: ReturnType<typeof openDb>) =>
-      (db.prepare('select on_list from items order by id').all() as { on_list: number }[]).map((r) => r.on_list);
-    const count = (db: ReturnType<typeof openDb>, t: string) =>
-      (db.prepare(`select count(*) as n from ${t}`).get() as { n: number }).n;
+      const onList = (db: ReturnType<typeof openDb>) =>
+        (db.prepare('select on_list from items order by id').all() as { on_list: number }[]).map((r) => r.on_list);
+      const count = (db: ReturnType<typeof openDb>, t: string) =>
+        (db.prepare(`select count(*) as n from ${t}`).get() as { n: number }).n;
 
-    const db = openDb(file);
-    expect(onList(db)).toEqual([1, 1, 0]);
-    expect((db.prepare('select color from stores').get() as { color: string }).color).toBe('fig');
-    expect(count(db, 'receipts')).toBe(1);
-    expect(version(db)).toBe(1);
-    db.close();
+      const db = openDb(file);
+      open.push(db);
+      expect(onList(db)).toEqual([1, 1, 0]);
+      expect((db.prepare('select color from stores').get() as { color: string }).color).toBe('fig');
+      expect(count(db, 'receipts')).toBe(1);
+      expect(version(db)).toBe(1);
+      const stamp = (db.prepare('select changed_at from items order by id').get() as { changed_at: string }).changed_at;
+      expect(stamp).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      db.close();
+      open.pop();
 
-    const again = openDb(file);
-    expect(count(again, 'categories')).toBe(12);
-    expect(onList(again)).toEqual([1, 1, 0]);
-    again.close();
-    fs.rmSync(dir, { recursive: true, force: true });
+      const again = openDb(file);
+      open.push(again);
+      expect(count(again, 'categories')).toBe(12);
+      expect(onList(again)).toEqual([1, 1, 0]);
+    } finally {
+      for (const d of open) d.close();
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

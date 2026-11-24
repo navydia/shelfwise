@@ -62,7 +62,7 @@ const MIGRATIONS: ((db: Db) => void)[] = [
       alter table items add column changed_at text not null default '';
       alter table stores add column color text not null default 'fig';
       update items set on_list = 1 where state in ('low','out');
-      update items set changed_at = datetime('now');
+      update items set changed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now');
     `);
   },
 ];
