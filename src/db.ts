@@ -1,6 +1,7 @@
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 
-export type Db = Database.Database;
+// Uses the SQLite built into Node (22.16+), so there is no native library to compile.
+export type Db = DatabaseSync;
 
 const SCHEMA = `
 create table if not exists stores (
@@ -42,9 +43,24 @@ create table if not exists receipt_lines (
 `;
 
 export function openDb(path: string): Db {
-  const db = new Database(path);
-  db.pragma('foreign_keys = ON');
-  if (path !== ':memory:') db.pragma('journal_mode = WAL');
+  const db = new DatabaseSync(path);
+  db.exec('pragma foreign_keys = ON');
+  if (path !== ':memory:') db.exec('pragma journal_mode = WAL');
   db.exec(SCHEMA);
   return db;
+}
+
+/** Wraps fn in a transaction: commits if it returns, rolls back if it throws. */
+export function transaction<T>(db: Db, fn: () => T): () => T {
+  return () => {
+    db.exec('begin');
+    try {
+      const result = fn();
+      db.exec('commit');
+      return result;
+    } catch (err) {
+      db.exec('rollback');
+      throw err;
+    }
+  };
 }

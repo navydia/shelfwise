@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Db } from '../db';
+import { transaction, type Db } from '../db';
 import { saveReceiptPhoto } from '../lib/photos';
 import { parseReceiptText, normalizeLabel } from '../lib/receipt';
 import { proposeMatches } from '../lib/match';
@@ -39,7 +39,7 @@ export function receiptsRouter(db: Db, dataDir: string, ocr: Ocr = defaultOcr): 
     ).all(storeId) as { itemId: number; label: string }[];
     const proposals = proposeMatches(parsed, items, aliases);
 
-    const create = db.transaction(() => {
+    const create = transaction(db, () => {
       const rid = Number(db.prepare("insert into receipts(store_id, created_at, status, raw_text, photo) values (?, ?, 'pending', ?, ?)")
         .run(storeId, new Date().toISOString(), text, photo).lastInsertRowid);
       return {
@@ -74,7 +74,7 @@ export function receiptsRouter(db: Db, dataDir: string, ocr: Ocr = defaultOcr): 
     }
 
     let updated = 0;
-    db.transaction(() => {
+    transaction(db, () => {
       for (const m of matches) {
         if (m.itemId === null || m.itemId === undefined) continue;
         const line = lineStmt.get(m.lineId, receipt.id) as { raw_text: string; price_cents: number };
