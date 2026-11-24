@@ -8,7 +8,7 @@
 
 **Tech Stack:** Node 22, TypeScript run with `tsx`, Express, better-sqlite3, multer (uploads), sharp (photo resizing), tesseract.js (receipt OCR on the server), vitest + supertest. Front end: plain HTML/CSS/JS modules, no bundler.
 
-**Spec:** https://claude.ai/artifact/EgRpBUWeprDEsYUNVYc2dk ("Shelfwise: design", approved 2026-11-23)
+**Spec:** docs/superpowers/specs/2026-11-23-shelfwise-design.md (approved 2026-11-23)
 
 ## Global Constraints
 
