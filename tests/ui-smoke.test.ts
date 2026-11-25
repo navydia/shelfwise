@@ -51,4 +51,8 @@ describe('ui smoke', () => {
       expect(css.toUpperCase(), hex).toContain(hex);
     }
   });
+  it('no_uppercase_text_transform', () => {
+    const walk = (d: string): string[] => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(`${d}/${e.name}`) : [`${d}/${e.name}`]));
+    for (const f of walk('public').filter((f) => f.endsWith('.css'))) expect(fs.readFileSync(f, 'utf8'), f).not.toContain('uppercase');
+  });
 });

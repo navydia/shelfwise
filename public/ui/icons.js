@@ -12,6 +12,10 @@ const PATHS = {
   camera: '<path d="M4 8.5A1.5 1.5 0 0 1 5.5 7H8l1.5-2h5L16 7h2.5A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="13" r="3.5"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   plus: '<path d="M12 5v14M5 12h14"/>',
+  'search-x': '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M9 9l4 4M13 9l-4 4"/>',
+  'filter-x': '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/><path d="M3 3l18 18"/>',
+  cart: '<path d="M3 4h2.5l2 11h10l2-8H7"/><circle cx="9" cy="19" r="1.3"/><circle cx="17" cy="19" r="1.3"/>',
+  store: '<path d="M4 9.5l1.5-5h13l1.5 5"/><path d="M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0"/><path d="M5.5 12.5V20h13v-7.5M10 20v-4.5h4V20"/>',
 };
 
 export function icon(name) {

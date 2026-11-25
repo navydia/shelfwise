@@ -3,6 +3,7 @@ import { renderTripCards } from '../ui/trip-cards.js';
 import { openSheet } from '../ui/sheet.js';
 import { budgetTag } from '../lib/budget-tag.js';
 import { groupList } from '../lib/list-groups.js';
+import { listMeta } from '../lib/screen-states.js';
 import { fmt, priceParts } from '../lib/money.js';
 import { openBudgetSheet, budgetKey } from './budget-sheet.js';
 import { finishForStore } from './finish-sheet.js';
@@ -135,7 +136,7 @@ export async function renderList(root, ctx) {
   function drawLive() {
     const ids = new Set(api.trips.get(storeId).ids);
     const ticked = new Set(lines.filter((l) => ids.has(l.id)).map((l) => l.id));
-    need.textContent = `TO GET ${lines.length - ticked.size}`;
+    need.textContent = listMeta(lines.length - ticked.size, ticked.size);
     groupBtn.textContent = `${BY_LABEL[group.by]} ▾`;
     groupBtn.setAttribute('aria-label', `Group list: ${BY_LABEL[group.by]}`);
     drawPill(ticked.size);
