@@ -20,10 +20,15 @@ const state = { stores: [], pantryStoreId: null, storeId: null, loadError: null 
 
 api.onOffline((on) => { offlineBar.hidden = !on; });
 
+// Toasts live outside the view root (a redraw clears the root) and above the tab bar and sheets.
+const toasts = document.createElement('div');
+toasts.className = 'toasts';
+toasts.setAttribute('aria-live', 'polite');
+document.body.append(toasts);
 export function toast(message) {
   const el = document.createElement('div');
-  el.className = 'msg'; el.setAttribute('role', 'alert'); el.textContent = message;
-  root.prepend(el);
+  el.className = 'toast'; el.textContent = message;
+  toasts.append(el);
   setTimeout(() => el.remove(), 5000);
 }
 

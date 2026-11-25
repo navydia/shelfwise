@@ -3,7 +3,7 @@ import { openSheet } from '../ui/sheet.js';
 import { icon } from '../ui/icons.js';
 import { openEmojiSheet } from '../ui/emoji-sheet.js';
 import { compareAisles } from '../lib/list-groups.js';
-import { blankSize, draftFrom, diffSizes, ensureDefault, newItemSizes, sizeLabel, sizeRowText } from '../lib/staple-sizes.js';
+import { blankSize, draftFrom, planSizeCalls, ensureDefault, newItemSizes, sizeLabel, sizeRowText } from '../lib/staple-sizes.js';
 import { openSizeSheet } from './size-sheet.js';
 
 const NEW_CAT = '__new-cat';
@@ -31,6 +31,8 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
   let photoUrl = item?.photo ? `/photos/${item.photo}` : null;
   let emoji = item?.emoji ?? null;
   let current = item;
+  let sizesDirty = false; // some size call succeeded: the Pantry is out of date until it redraws
+  let finished = false;
   // The sizes as the server has them (kept in step while Save applies them), and the edited copies.
   let base = (item?.sizes ?? []).map((s) => ({ ...s }));
   let drafts = isNew ? [blankSize()] : base.map(draftFrom);
@@ -229,11 +231,14 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
   });
 
   drawPhoto(); drawCategories(); drawSizes();
-  const sheet = openSheet({ title: isNew ? 'New staple' : 'Edit staple', body });
+  const sheet = openSheet({
+    title: isNew ? 'New staple' : 'Edit staple', body,
+    onClose: () => { if (sizesDirty && !finished) onSaved?.(current); },
+  });
   drawAisles();
 
   // The server keeps an archived staple's name taken: offer to bring that one back instead.
-  const failFrom = (err) => fail(err.message, err.status === 409 ? (err.data?.archivedId ?? null) : null);
+  const failFrom = (err, partial = false) => fail(`${partial ? 'Sizes were saved. ' : ''}${err.message}`, err.status === 409 ? (err.data?.archivedId ?? null) : null);
   restoreBtn.addEventListener('click', async () => {
     if (restoreId == null) return;
     restoreBtn.disabled = true;
@@ -248,28 +253,20 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
   // Applies the size changes one request at a time, keeping `base` and the drafts' ids in step,
   // so a retry after an error picks up where it stopped.
   async function applySizes() {
-    const d = diffSizes(base, drafts);
-    const steps = {
-      remove: async () => { for (const id of d.remove) { await api.deleteSize(id); base = base.filter((s) => s.id !== id); } },
-      update: async () => {
-        for (const u of d.update) {
-          const saved = await api.patchSize(u.id, u.patch);
-          base = base.map((s) => (s.id === u.id ? saved : u.patch.isDefault ? { ...s, isDefault: false } : s));
-        }
-      },
-      create: async () => {
-        const fresh = drafts.filter((x) => x.id == null);
-        for (let i = 0; i < d.create.length; i++) {
-          const saved = await api.createSize(item.id, d.create[i]);
-          fresh[i].id = saved.id;
-          base = [...(saved.isDefault ? base.map((s) => ({ ...s, isDefault: false })) : base), saved];
-        }
-      },
-    };
-    // Removing every old size before adding the new ones would hit "a staple needs a size": add first then.
-    const order = d.remove.length >= base.length ? ['create', 'update', 'remove'] : ['remove', 'update', 'create'];
-    for (const k of order) await steps[k]();
-    return d.remove.length + d.update.length + d.create.length > 0;
+    const plan = planSizeCalls(base, drafts);
+    for (const c of plan) {
+      if (c.op === 'remove') { await api.deleteSize(c.id); base = base.filter((x) => x.id !== c.id); }
+      else if (c.op === 'update') {
+        const saved = await api.patchSize(c.id, c.patch);
+        base = base.map((x) => (x.id === c.id ? saved : c.patch.isDefault ? { ...x, isDefault: false } : x));
+      } else {
+        const saved = await api.createSize(item.id, c.body);
+        c.draft.id = saved.id;
+        base = [...(saved.isDefault ? base.map((x) => ({ ...x, isDefault: false })) : base), saved];
+      }
+      sizesDirty = true;
+    }
+    return plan.length > 0;
   }
 
   body.addEventListener('submit', async (e) => {
@@ -308,11 +305,12 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
         if (sizesChanged && !Object.keys(patch).length) patch.name = nm;
         saved = Object.keys(patch).length ? await api.patchItem(item.id, patch) : current;
       }
+      finished = true;
       sheet.close();
       onSaved?.(saved);
     } catch (err) {
       save.disabled = false;
-      failFrom(err);
+      failFrom(err, sizesDirty);
     }
   });
 

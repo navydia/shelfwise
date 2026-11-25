@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 // @ts-ignore plain JS module
-import { diffSizes, sizeRowText, sizeLabel, parseAmount, ensureDefault, newItemSizes, blankSize, draftFrom } from '../public/lib/staple-sizes.js';
+import { diffSizes, sizeRowText, sizeLabel, parseAmount, ensureDefault, newItemSizes, blankSize, draftFrom, planSizeCalls } from '../public/lib/staple-sizes.js';
 
 const sz = (id: number, o: any = {}) => ({ id, name: '', soldBy: 'each', lastPriceCents: null, priceSource: null, priceDate: null, usualAmount: 1, isDefault: false, ...o });
 
@@ -61,5 +61,22 @@ describe('staple size drafts', () => {
     expect(parseAmount('')).toBeNull();
     expect(parseAmount('abc')).toBeNull();
     expect(parseAmount('-1')).toBeNull();
+  });
+
+  it('promoting_update_runs_before_the_old_default_is_removed', () => {
+    const orig = [sz(1, { isDefault: true }), sz(2, { name: 'B' }), sz(3, { name: 'C' })];
+    const drafts = [draftFrom(orig[1]), draftFrom(orig[2])].map((d: any, i: number) => ({ ...d, isDefault: i === 1 }));
+    const plan = planSizeCalls(orig, drafts).map((c: any) => c.op + (c.id ?? ''));
+    expect(plan).toEqual(['update3', 'remove1']);
+  });
+  it('replacing_every_size_creates_first', () => {
+    const orig = [sz(1, { isDefault: true })];
+    const plan = planSizeCalls(orig, [{ ...blankSize(), name: 'New' }]).map((c: any) => c.op);
+    expect(plan).toEqual(['create', 'remove']);
+  });
+  it('plain_edits_remove_then_update_then_create', () => {
+    const orig = [sz(1, { isDefault: true }), sz(2, { name: 'B' })];
+    const drafts = [{ ...draftFrom(orig[0]), name: 'A' }, { ...blankSize(), name: 'N', isDefault: false }];
+    expect(planSizeCalls(orig, drafts).map((c: any) => c.op)).toEqual(['remove', 'update', 'create']);
   });
 });

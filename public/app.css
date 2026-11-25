@@ -371,8 +371,7 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .srow .s { font-size: 13.5px; line-height: 1.4; color: var(--stone); }
 .srow .lbl { flex: 1; min-width: 0; text-align: left; }
 .srow .v { margin-left: auto; display: flex; align-items: center; gap: 6px; color: var(--stone); font-size: 14.5px; flex: none; }
-.srow .v .ic { display: inline-flex; transform: rotate(-90deg); }
-.srow .v .ic { width: 18px; height: 18px; }
+.srow .v .ic { display: inline-flex; width: 18px; height: 18px; transform: rotate(-90deg); }
 .srow.add { color: var(--fig); font-weight: 700; }
 .srow .dot { width: 12px; height: 12px; border-radius: 4px; flex: none; }
 .srow.edit { display: block; padding: 8px 10px; }
@@ -395,7 +394,7 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .size-form .money .per { font-family: var(--font-disp); font-weight: 700; color: var(--stone); }
 .size-form .money .per[hidden] { display: none; }
 .seg { display: flex; background: var(--paper); border-radius: 12px; padding: 3px; gap: 2px; }
-.seg button { flex: 1; min-height: 40px; border-radius: 10px; background: transparent; color: var(--stone); font-family: var(--font-disp); font-weight: 600; font-size: 15px; }
+.seg button { flex: 1; min-height: var(--tap); border-radius: 10px; background: transparent; color: var(--stone); font-family: var(--font-disp); font-weight: 600; font-size: 15px; }
 .seg button.on { background: var(--card); color: var(--f950); font-weight: 700; box-shadow: var(--lift-1); }
 .note { margin: 0; padding: 10px 12px; border-radius: 10px; background: var(--paper); color: var(--marigold-text); font-size: 14px; }
 .note[hidden] { display: none; }
@@ -430,3 +429,7 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .sheet .empty-state { padding-top: 14px; }
 .size-form .field, .size-form .money { min-width: 0; }
 .size-form .field > input[type=text] { width: 100%; min-width: 0; box-sizing: border-box; }
+
+/* Toasts: fixed, above sheets (31) and the tab bar. Fig 950 on Butter-light text for AA. */
+.toasts { position: fixed; left: 16px; right: 16px; top: calc(12px + env(safe-area-inset-top)); z-index: 60; display: grid; gap: 8px; pointer-events: none; }
+.toast { padding: 12px 14px; border-radius: 12px; background: var(--f950); color: var(--paper); font-size: 15px; box-shadow: 0 8px 20px rgba(30, 21, 25, .3); }

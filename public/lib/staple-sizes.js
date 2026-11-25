@@ -60,3 +60,18 @@ export function diffSizes(original, drafts) {
   }
   return { remove, update, create };
 }
+
+// The server calls Save makes, in order. A promoting update goes before any removal so that deleting the old
+// default never lets the server pick its own heir (Ruling 7 moves the list onto the default). When every old size
+// is going, the new ones are added first (a staple always needs a size).
+export function planSizeCalls(original, drafts) {
+  const d = diffSizes(original, drafts);
+  const fresh = drafts.filter((x) => x.id == null);
+  const removes = d.remove.map((id) => ({ op: 'remove', id }));
+  const updates = d.update.map((u) => ({ op: 'update', id: u.id, patch: u.patch }));
+  const creates = d.create.map((body, i) => ({ op: 'create', body, draft: fresh[i] }));
+  if (d.remove.length >= original.length) return [...creates, ...updates, ...removes];
+  const promote = updates.filter((u) => u.patch.isDefault);
+  const rest = updates.filter((u) => !u.patch.isDefault);
+  return [...promote, ...removes, ...rest, ...creates];
+}
