@@ -167,7 +167,7 @@ export async function renderList(root, ctx) {
     need.textContent = listMeta(toGet, ticked.size);
     groupBtn.textContent = `${BY_LABEL[group.by]} ▾`;
     groupBtn.setAttribute('aria-label', `Group list: ${BY_LABEL[group.by]}`);
-    drawPill(ticked.size);
+    drawPill(st === 'allTicked' ? 0 : ticked.size);
     sections.innerHTML = '';
     addBox.classList.toggle('solo', st !== 'normal');
     if (st === 'empty') {
