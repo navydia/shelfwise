@@ -11,6 +11,8 @@ import { oneoffsRouter } from './routes/oneoffs';
 import { listRouter } from './routes/list';
 import { receiptsRouter } from './routes/receipts';
 
+const VERSION = (JSON.parse(fs.readFileSync(fileURLToPath(new URL('../package.json', import.meta.url)), 'utf8')) as { version: string }).version;
+
 export type AppOptions = {
   dataDir?: string;
   readReceiptText?: (imagePath: string) => Promise<string>;
@@ -22,7 +24,7 @@ export function createApp(db: Db, opts: AppOptions = {}): Express {
   const app = express();
   app.use(express.json());
   app.get('/api/health', (_req, res) => {
-    res.json({ ok: true });
+    res.json({ ok: true, version: VERSION });
   });
   app.use('/api/stores', storesRouter(db, dataDir));
   app.use('/api/stores', listRouter(db));

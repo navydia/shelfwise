@@ -83,3 +83,32 @@ describe('stores API', () => {
     expect(fs.existsSync(file)).toBe(false);
   });
 });
+
+describe('stores API: aisles', () => {
+  it('list_store_aisles', async () => {
+    const { api } = makeApp();
+    const a = (await api.post('/api/stores').send({ name: 'A' })).body;
+    const b = (await api.post('/api/stores').send({ name: 'B' })).body;
+    for (const [n, aisle, st] of [['p', '10', a], ['q', '2', a], ['r', '2', a], ['s', 'Deli', a], ['t', 'bakery', a], ['u', null, a], ['v', '5', b]] as const)
+      await api.post('/api/items').send({ name: n, storeId: st.id, aisle });
+    const gone = (await api.post('/api/items').send({ name: 'w', storeId: a.id, aisle: '99' })).body;
+    await api.patch(`/api/items/${gone.id}`).send({ archived: true });
+    const res = await api.get(`/api/stores/${a.id}/aisles`);
+    expect(res.body).toEqual([{ aisle: '2', count: 2 }, { aisle: '10', count: 1 }, { aisle: 'bakery', count: 1 }, { aisle: 'Deli', count: 1 }]);
+    expect((await api.get('/api/stores/9999/aisles')).status).toBe(404);
+  });
+  it('rename_aisle_merges_and_scoped', async () => {
+    const { api } = makeApp();
+    const a = (await api.post('/api/stores').send({ name: 'A' })).body;
+    const b = (await api.post('/api/stores').send({ name: 'B' })).body;
+    for (const [n, aisle, st] of [['p', '3', a], ['q', '4', a], ['r', '3', b]] as const)
+      await api.post('/api/items').send({ name: n, storeId: st.id, aisle });
+    const res = await api.post(`/api/stores/${a.id}/aisles/rename`).send({ from: '3', to: ' 4 ' });
+    expect(res.body).toEqual({ renamed: 1 });
+    expect((await api.get(`/api/stores/${a.id}/aisles`)).body).toEqual([{ aisle: '4', count: 2 }]);
+    expect((await api.get(`/api/stores/${b.id}/aisles`)).body).toEqual([{ aisle: '3', count: 1 }]);
+    expect((await api.post(`/api/stores/${a.id}/aisles/rename`).send({ from: '4', to: ' ' })).status).toBe(400);
+    expect((await api.post(`/api/stores/${a.id}/aisles/rename`).send({ from: '4', to: 'x'.repeat(21) })).status).toBe(400);
+    expect((await api.post('/api/stores/9999/aisles/rename').send({ from: '4', to: 'x' })).status).toBe(404);
+  });
+});
