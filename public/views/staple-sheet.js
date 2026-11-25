@@ -27,7 +27,7 @@ function priceText(cents) {
 }
 
 // item === null opens "New staple" (POST). Errors from the server show inline.
-export function openStapleSheet(item, { stores, categories, defaultStoreId, onSaved, onDeleted, toast } = {}) {
+export function openStapleSheet(item, { stores, categories, defaultStoreId, onSaved, onDeleted, toast, name } = {}) {
   const isNew = !item;
   const cats = [...categories];
   const origStoreId = item?.storeId ?? null;
@@ -78,7 +78,7 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
   const qtyN = body.querySelector('.n');
   const src = body.querySelector('.src');
 
-  f.name.value = item?.name ?? '';
+  f.name.value = item?.name ?? name ?? '';
   f.price.value = priceText(item?.lastPriceCents);
 
   function drawPhoto() {
