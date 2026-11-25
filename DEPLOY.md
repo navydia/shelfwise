@@ -64,6 +64,23 @@ Receipt reading uses tesseract.js on the server. The first receipt makes the ser
 
 This was not testable where the app was built. Upload one real receipt and look at the lines it finds. If the app says receipt reading isn't working, the reason is in the server log (`journalctl -u shelfwise`), most often that the language data could not be downloaded. If lines are missing or garbled, try a flatter, better-lit photo. Reading quality is the most likely thing to need tuning.
 
+## Keeping it running and updating it (pm2)
+
+```
+npm install -g pm2
+pm2 start ecosystem.config.cjs     # start (restarts itself if it crashes)
+pm2 status                         # is it online?
+pm2 logs shelfwise                 # live log (Ctrl+C to leave)
+pm2 restart shelfwise              # manual restart
+pm2 stop shelfwise                 # stop
+```
+
+To update after pushing changes from another machine: `npm run update`
+(runs `git pull` and `npm ci`). pm2 watches `src/` and restarts on its own;
+run `pm2 restart shelfwise` if you changed `package.json` dependencies.
+Changes inside `public/` need no restart. Set `SHELFWISE_DATA` / `PORT` in the
+terminal before `pm2 start` if you don't use the defaults.
+
 ## 6. Backups
 
 ```sh
