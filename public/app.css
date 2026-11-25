@@ -231,17 +231,15 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .budget-tag.variant-near { background: var(--marigold-fill); }
 .budget-tag.variant-over { background: var(--paprika); color: var(--paper); }
 .list-bar { display: flex; align-items: center; justify-content: space-between; margin: 0 2px 8px; }
-.list-bar .need { font-family: var(--font-disp); font-weight: 700; font-size: 14px; color: var(--stone); }
-.list-bar .groupbtn { padding: 0 4px; }
-form.add { display: flex; gap: 8px; margin-bottom: 8px; }
-form.add input { flex: 1; min-width: 0; height: var(--tap); border-radius: 12px; background: var(--card); border: 1px solid var(--line); padding: 0 12px; font-size: 16px; }
-form.add button { min-height: var(--tap); padding: 0 16px; border-radius: 12px; background: var(--f950); color: var(--butter); font-family: var(--font-disp); font-weight: 700; box-shadow: var(--lift-btn); }
+.list-bar .need { font-weight: 600; font-size: 14px; color: var(--stone); }
+.list-bar .groupbtn { padding: 0 4px; font-size: 14px; }
 .tick { flex: none; width: var(--tap); height: var(--tap); min-height: var(--tap); padding: 0; margin: -8px 0 -8px -8px; background: transparent; display: grid; place-items: center; }
-.tick::before { content: ''; width: 24px; height: 24px; border-radius: 8px; border: 2px solid var(--stone); background: var(--card); box-sizing: border-box; }
+.tick::before { content: ''; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--pebble); background: var(--card); box-sizing: border-box; }
 .tick[aria-pressed=true]::before { background: var(--f900) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23E8CC7A' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5'/%3E%3C/svg%3E") center / 18px no-repeat; border-color: var(--f900); }
 .row .price { flex: none; font-size: 24px; }
+.row .rprice { flex: none; font-weight: 600; font-size: 16px; font-variant-numeric: tabular-nums; color: var(--f950); }
 .row .dash { flex: none; width: 24px; text-align: center; color: var(--pebble); font-family: var(--font-disp); font-weight: 800; font-size: 20px; }
-.row.done .thumb, .row.done .info, .row.done .price, .row.done .dash { opacity: .55; }
+.row.done .thumb, .row.done .info, .row.done .price, .row.done .rprice, .row.done .dash { opacity: .55; }
 .row.done .nm { text-decoration: line-through; }
 .finish-pill { flex: none; white-space: nowrap; height: 44px; padding: 0 8px 0 16px; border-radius: 22px; background: var(--f950); color: var(--butter); display: flex; align-items: center; gap: 10px; font-family: var(--font-disp); font-weight: 800; font-size: 14px; box-shadow: 0 6px 16px rgba(30, 21, 25, .25); }
 .finish-pill i { font-style: normal; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 13px; background: var(--butter); color: var(--f950); display: grid; place-items: center; font-size: 12.5px; }
@@ -314,3 +312,20 @@ form.add button { min-height: var(--tap); padding: 0 16px; border-radius: 12px; 
 .sk-bar.short { width: 40%; }
 @keyframes sk-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @media (prefers-reduced-motion: reduce) { .sk { animation: none; } }
+/* List: grouped cards, add-an-item row, empty states */
+.lst .sec { margin-bottom: 0; }
+.lst > .sec:first-child .ghd { margin-top: 8px; }
+.lst .grp .row + .row::before { left: 60px; }
+.lst .grp .tick + .thumb { margin-left: 0; }
+.es-ico.butter { background: var(--butter); }
+.addrow { display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--tap); padding: 0 16px; background: transparent; color: var(--fig); font-family: var(--font-disp); font-weight: 700; font-size: 15px; text-align: left; }
+.addrow[hidden], .addform[hidden] { display: none; }
+.addrow .ic { width: 20px; height: 20px; stroke-width: 2.2; }
+.grp > .addbox { border-top: 1px solid var(--line); }
+.addform { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+.addform input { flex: 1; min-width: 0; height: var(--tap); border-radius: 12px; background: var(--paper); border: 1px solid var(--line); padding: 0 12px; font-size: 16px; }
+.addform .add-go { min-height: var(--tap); padding: 0 16px; border-radius: 12px; background: var(--f950); color: var(--butter); font-family: var(--font-disp); font-weight: 700; box-shadow: var(--lift-btn); }
+.addform .add-cancel { min-height: var(--tap); padding: 0 8px; background: transparent; color: var(--fig); font-family: var(--font-disp); font-weight: 700; }
+.addbox.solo:not(.open) { display: none; }
+.addbox.solo.open { margin: 14px 0; background: var(--card); border-radius: 16px; box-shadow: var(--lift-2); }
+.tag-hidden, .budget-tag[hidden], .list-bar[hidden] { display: none; }

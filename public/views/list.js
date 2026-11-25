@@ -3,7 +3,10 @@ import { renderTripCards } from '../ui/trip-cards.js';
 import { openSheet } from '../ui/sheet.js';
 import { budgetTag } from '../lib/budget-tag.js';
 import { groupList } from '../lib/list-groups.js';
-import { listMeta } from '../lib/screen-states.js';
+import { listMeta, listState } from '../lib/screen-states.js';
+import { emptyState } from '../ui/empty-state.js';
+import { skeletonRows } from '../ui/skeleton.js';
+import { icon } from '../ui/icons.js';
 import { fmt, priceParts } from '../lib/money.js';
 import { openBudgetSheet, budgetKey } from './budget-sheet.js';
 import { finishForStore } from './finish-sheet.js';
@@ -66,6 +69,13 @@ export async function renderList(root, ctx) {
   const storeId = ctx.storeId;
   const store = state.stores.find((s) => s.id === storeId);
   const budget = api.store.get(budgetKey(storeId), '');
+  // First open: the title and a skeleton card until the data arrives. A redraw keeps what is on screen.
+  // If the load fails, app.js clears the page and shows the error in its place.
+  if (!root.querySelector('[data-list]')) {
+    const t = el('h1', 'title', 'List');
+    t.dataset.list = '1';
+    root.replaceChildren(t, skeletonRows());
+  }
   const [data, categories] = await Promise.all([api.getList(storeId, budget), api.getCategories()]);
   if (ctx.stale?.()) return; // a newer render has started: leave the page and dock alone
   const lines = [...data.lines, ...data.unpriced];
@@ -79,10 +89,10 @@ export async function renderList(root, ctx) {
   const need = el('span', 'need');
   const groupBtn = el('button', 'link groupbtn'); groupBtn.type = 'button';
   bar.append(need, groupBtn);
-  const form = el('form', 'add');
-  form.innerHTML = '<input type="text" name="name" placeholder="Add to this list" autocomplete="off" aria-label="Add item to list"><button>Add</button>';
-  const sections = el('div', 'sections');
-  root.append(el('h1', 'title', 'List'), tripBox, tagBtn, bar, form, sections);
+  const sections = el('div', 'sections lst');
+  const title = el('h1', 'title', 'List');
+  title.dataset.list = '1';
+  root.append(title, tripBox, tagBtn, bar, sections);
 
   // Budget tag, no meter.
   const t = budgetTag({ subtotalCents: data.subtotalCents, budgetCents: data.budgetCents, status: data.status });
@@ -93,6 +103,21 @@ export async function renderList(root, ctx) {
   tagBtn.append(priceEl(t.bigCents), side);
   tagBtn.addEventListener('click', () => openBudgetSheet(storeId, budget, redraw));
 
+  // "+ Add an item": a row that opens into an inline field. One node, moved into place by drawLive, so an open field survives a tick.
+  const addBox = el('div', 'addbox');
+  const addBtn = el('button', 'addrow'); addBtn.type = 'button';
+  addBtn.insertAdjacentHTML('beforeend', icon('plus'));
+  addBtn.append(el('span', '', 'Add an item'));
+  const form = el('form', 'addform'); form.hidden = true;
+  form.innerHTML = '<input type="text" name="name" placeholder="Add to this list" autocomplete="off" aria-label="Add item to list"><button type="submit" class="add-go">Add</button><button type="button" class="add-cancel">Cancel</button>';
+  addBox.append(addBtn, form);
+  function setAdding(on) {
+    form.hidden = !on; addBtn.hidden = on;
+    addBox.classList.toggle('open', on);
+    if (on) form.elements.name.focus(); else form.reset();
+  }
+  addBtn.addEventListener('click', () => setAdding(true));
+  form.querySelector('.add-cancel').addEventListener('click', () => setAdding(false));
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = form.elements.name.value.trim();
@@ -115,7 +140,7 @@ export async function renderList(root, ctx) {
     const info = el('div', 'info');
     info.append(el('div', 'nm', l.name), el('div', 'sub', l.lineCents == null ? 'No price yet · not counted' : `${l.usualQty} × ${fmt(l.lastPriceCents)}`));
     row.append(tick, thumb, info);
-    if (l.lineCents != null) row.append(priceEl(l.lineCents));
+    if (l.lineCents != null) row.append(el('span', 'rprice', fmt(l.lineCents)));
     else { const d = el('span', 'dash', '–'); d.setAttribute('aria-hidden', 'true'); row.append(d); }
     return row;
   }
@@ -136,21 +161,45 @@ export async function renderList(root, ctx) {
   function drawLive() {
     const ids = new Set(api.trips.get(storeId).ids);
     const ticked = new Set(lines.filter((l) => ids.has(l.id)).map((l) => l.id));
-    need.textContent = listMeta(lines.length - ticked.size, ticked.size);
+    const toGet = lines.length - ticked.size;
+    const st = listState(toGet, ticked.size);
+    tagBtn.hidden = bar.hidden = st === 'empty';
+    need.textContent = listMeta(toGet, ticked.size);
     groupBtn.textContent = `${BY_LABEL[group.by]} ▾`;
     groupBtn.setAttribute('aria-label', `Group list: ${BY_LABEL[group.by]}`);
     drawPill(ticked.size);
     sections.innerHTML = '';
-    if (!lines.length) { sections.append(el('p', 'empty', 'Nothing on this list yet. Add staples from the Pantry, or add something above.')); return; }
-    for (const g of groupList(lines, group.by, categories, ticked, group.tickedToBottom)) {
-      const sec = el('section', 'sec');
-      if (g.title && g.key === 'cart') sec.append(el('h2', '', g.title));
-      else if (g.title) { const h = el('h2', 'gh'); h.append(el('span', 'lab', g.title), el('span', 'ct', String(g.items.length))); sec.append(h); }
-      const rows = el('div', 'rows');
-      for (const l of g.items) rows.append(rowFor(l, ticked.has(l.id)));
-      sec.append(rows);
-      sections.append(sec);
+    addBox.classList.toggle('solo', st !== 'normal');
+    if (st === 'empty') {
+      sections.append(emptyState({
+        icon: 'list', title: 'Nothing to buy here',
+        body: 'Tap the basket on a staple in your pantry and it shows up on this list.',
+        primary: { label: 'Check your pantry', icon: 'pantry', onClick: () => { location.hash = '#/pantry'; } },
+        secondary: { label: 'Add an item', onClick: () => setAdding(true) },
+      }), addBox);
+      return;
     }
+    if (st === 'allTicked') {
+      const n = ticked.size;
+      const es = emptyState({
+        icon: 'cart', title: "Everything's in the cart",
+        body: `${n} ${n === 1 ? 'item' : 'items'} · about ${fmt(data.subtotalCents)}. Finish to put ${n === 1 ? 'it' : 'them'} back in your pantry.`,
+        primary: { label: 'Finish shopping', onClick: () => finishForStore(store, { toast, onDone: redraw }) },
+        secondary: { label: 'Add an item', onClick: () => setAdding(true) },
+      });
+      es.querySelector('.es-ico').classList.add('butter');
+      sections.append(es, addBox);
+    }
+    const groups = groupList(lines, group.by, categories, ticked, group.tickedToBottom);
+    groups.forEach((g, i) => {
+      const sec = el('section', 'sec');
+      if (g.title) { const h = el('h2', 'ghd'); h.append(el('span', 'lab', g.title), el('span', 'ct', String(g.items.length))); sec.append(h); }
+      const card = el('div', 'grp');
+      for (const l of g.items) card.append(rowFor(l, ticked.has(l.id)));
+      if (st === 'normal' && i === groups.length - 1) card.append(addBox);
+      sec.append(card);
+      sections.append(sec);
+    });
   }
 
   groupBtn.addEventListener('click', () => openGroupSheet(group, (g) => { group = g; api.store.set(groupKey(storeId), g); drawLive(); }));
