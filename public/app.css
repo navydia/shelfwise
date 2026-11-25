@@ -433,3 +433,41 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 /* Toasts: fixed, above sheets (31) and the tab bar. Fig 950 on Butter-light text for AA. */
 .toasts { position: fixed; left: 16px; right: 16px; top: calc(12px + env(safe-area-inset-top)); z-index: 60; display: grid; gap: 8px; pointer-events: none; }
 .toast { padding: 12px 14px; border-radius: 12px; background: var(--f950); color: var(--paper); font-size: 15px; box-shadow: 0 8px 20px rgba(30, 21, 25, .3); }
+
+/* Shopping List: size tag, one-off tag, price box, suggestions, line sheet */
+.row .nm .sz { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 6px; background: var(--sunken); color: var(--f900); font-size: 12.5px; font-weight: 700; vertical-align: 1px; }
+.oneoff { display: inline-block; padding: 0 6px; border: 1.5px dashed var(--pebble); border-radius: 6px; color: var(--stone); font-size: 12px; font-weight: 700; line-height: 1.3; }
+.row .sub.bad { color: var(--marigold-text); font-weight: 600; white-space: normal; }
+.lst .row-main { min-height: 44px; }
+.lst .row-main .rprice, .lst .row-main .dash { flex: none; }
+.pbox { flex: none; display: flex; align-items: center; gap: 4px; width: 92px; min-height: var(--tap); padding: 0 10px; border-radius: 12px; border: 1.5px solid var(--pebble); background: var(--paper); color: var(--stone); font-family: var(--font-disp); font-weight: 700; font-size: 15px; }
+.pbox:focus-within { border-color: var(--fig); color: var(--f950); box-shadow: 0 0 0 3px rgba(74, 50, 66, .15); }
+.pbox input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; padding: 0; font: inherit; font-size: 16px; color: var(--f950); }
+.pbox input[aria-invalid=true] { color: var(--paprika); }
+.addform { flex-wrap: wrap; display: block; padding: 0; }
+.addform .addline { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }
+.suggest { list-style: none; margin: 0; padding: 0 12px 8px; display: grid; gap: 6px; }
+.suggest[hidden] { display: none; }
+.suggest .sg { display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--tap); padding: 0 12px; border-radius: 12px; background: var(--paper); text-align: left; color: var(--f950); font-size: 15px; }
+.suggest .sgt { flex: 1; min-width: 0; }
+.suggest .sgb { flex: none; color: var(--fig); font-family: var(--font-disp); font-weight: 700; }
+.line-form .lhead { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+.line-form .lhead .g { flex: 1; min-width: 0; }
+.line-form .lhead .sub2 { margin: 0; }
+.line-form .slab { margin-top: 4px; }
+.line-form .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+.line-form .field { display: grid; gap: 6px; font-family: var(--font-disp); font-weight: 700; font-size: 13px; color: var(--stone); margin-top: 8px; }
+.line-form .two .field { margin-top: 0; }
+.line-form .field input[type=text] { font-size: 16px; color: var(--f950); background: var(--paper); }
+.line-form .ltot { display: flex; align-items: center; min-height: var(--tap); padding: 0 12px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); font-family: var(--font-disp); font-weight: 800; font-size: 18px; color: var(--f950); }
+.line-form .money .per { font-family: var(--font-disp); font-weight: 700; color: var(--stone); }
+.line-form .btn-main { width: 100%; margin-top: 14px; }
+.settings .storeline { display: flex; align-items: center; gap: 8px; }
+.settings .storeline .dot { width: 12px; height: 12px; border-radius: 4px; flex: none; }
+.settings .seg { width: 100%; }
+.settings .srow.danger { color: var(--paprika); font-weight: 700; }
+.settings .srow.danger:disabled { color: var(--stone); font-weight: 400; }
+.settings .srow.col .seg { margin-top: 6px; }
+.settings .note { margin-top: 12px; }
+.settings .btn-main { width: 100%; margin-top: 8px; }
+body.kbd { padding-bottom: 55vh; }

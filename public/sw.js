@@ -1,6 +1,6 @@
 // Shelfwise service worker: caches the app shell and saves recent read responses
 // so the list and prices still show with weak or no signal. Writes are never queued.
-const VERSION = 'v17';
+const VERSION = 'v18';
 const SHELL_CACHE = `shelfwise-shell-${VERSION}`;
 const DATA_CACHE = `shelfwise-data-${VERSION}`;
 const SHELL = [
@@ -8,8 +8,8 @@ const SHELL = [
   '/views/pantry.js', '/views/list.js', '/views/receipt.js',
   '/ui/wordmark.js', '/ui/icons.js', '/ui/sheet.js', '/ui/tabbar.js', '/ui/store-picker.js', '/ui/empty-state.js', '/ui/skeleton.js', '/ui/thumb.js', '/ui/title-row.js', '/ui/emoji-sheet.js',
   '/views/store-sheet.js', '/views/staple-sheet.js', '/views/filter-sheet.js', '/ui/trip-cards.js', '/views/finish-sheet.js', '/views/budget-sheet.js',
-  '/views/size-sheet.js', '/views/size-picker.js', '/views/pantry-settings.js', '/views/category-sheet.js', '/views/aisle-sheet.js', '/views/archived-sheet.js',
-  '/lib/budget-tag.js', '/lib/list-groups.js', '/lib/money.js', '/lib/pantry-view.js', '/lib/trip.js', '/lib/screen-states.js', '/lib/sizes.js', '/lib/receipt-name.js', '/lib/emoji.js', '/lib/staple-sizes.js',
+  '/views/size-sheet.js', '/views/size-picker.js', '/views/pantry-settings.js', '/views/category-sheet.js', '/views/aisle-sheet.js', '/views/archived-sheet.js', '/views/line-sheet.js', '/views/list-settings.js',
+  '/lib/budget-tag.js', '/lib/list-groups.js', '/lib/money.js', '/lib/pantry-view.js', '/lib/trip.js', '/lib/screen-states.js', '/lib/sizes.js', '/lib/receipt-name.js', '/lib/emoji.js', '/lib/staple-sizes.js', '/lib/oneoffs.js',
   '/fonts/figtree-400.woff2', '/fonts/figtree-600.woff2', '/fonts/figtree-700.woff2', '/fonts/figtree-800.woff2', '/fonts/bricolage-800.woff2', '/fonts/plex-mono-400.woff2',
 ];
 

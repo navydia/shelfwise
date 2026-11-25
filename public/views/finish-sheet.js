@@ -3,29 +3,34 @@ import { openSheet } from '../ui/sheet.js';
 import { budgetKey } from './budget-sheet.js';
 import { thumb } from '../ui/thumb.js';
 import { lineKey } from '../lib/trip.js';
+import { finishMessage } from '../lib/oneoffs.js';
 
 const OFFLINE = /^You are offline/;
-
-export const doneMessage = (n) => `Done. ${n} ${n === 1 ? 'item is' : 'items are'} back in your pantry.`;
 
 // tickedItems and remainingItems are list lines ({ kind, id, name, photo, emoji }). onDone(count) runs after a successful finish.
 export function openFinishSheet(store, tickedItems, remainingItems, { onDone } = {}) {
   const body = document.createElement('div');
   body.className = 'finish-form';
 
-  const back = document.createElement('div');
-  back.className = 'label';
-  back.textContent = `Back in your pantry · ${tickedItems.length}`;
-  const rows = document.createElement('div');
-  rows.className = 'rows';
-  for (const it of tickedItems) {
-    const row = document.createElement('div');
-    row.className = 'row';
-    const nm = Object.assign(document.createElement('div'), { className: 'nm', textContent: it.name });
-    row.append(thumb(it, 40), nm);
-    rows.append(row);
-  }
-  body.append(back, rows);
+  const staples = tickedItems.filter((i) => i.kind !== 'oneoff');
+  const oneoffs = tickedItems.filter((i) => i.kind === 'oneoff');
+  const group = (text, list) => {
+    const label = document.createElement('div');
+    label.className = 'label';
+    label.textContent = `${text} · ${list.length}`;
+    const rows = document.createElement('div');
+    rows.className = 'rows';
+    for (const it of list) {
+      const row = document.createElement('div');
+      row.className = 'row';
+      const nm = Object.assign(document.createElement('div'), { className: 'nm', textContent: it.name });
+      row.append(thumb(it, 40), nm);
+      rows.append(row);
+    }
+    body.append(label, rows);
+  };
+  if (staples.length) group('Back in your pantry', staples);
+  if (oneoffs.length) group('One-offs, removed from the list', oneoffs);
 
   if (remainingItems.length) {
     const still = document.createElement('div');
@@ -46,7 +51,7 @@ export function openFinishSheet(store, tickedItems, remainingItems, { onDone } =
   go.addEventListener('click', async () => {
     go.disabled = true; msg.hidden = true;
     try {
-      await api.finishTrip(store.id, tickedItems.filter((i) => i.kind !== 'oneoff').map((i) => i.id), tickedItems.filter((i) => i.kind === 'oneoff').map((i) => i.id));
+      await api.finishTrip(store.id, staples.map((i) => i.id), oneoffs.map((i) => i.id));
     } catch (err) {
       msg.textContent = OFFLINE.test(err.message) ? "Couldn't reach Shelfwise. Nothing was changed on this phone; check the list before trying again." : err.message;
       msg.hidden = false;
@@ -55,7 +60,7 @@ export function openFinishSheet(store, tickedItems, remainingItems, { onDone } =
     }
     api.trips.clear(store.id);
     sheet.close();
-    onDone?.(tickedItems.length);
+    onDone?.(tickedItems.length, finishMessage(staples.length, oneoffs.length));
   });
   return sheet;
 }
@@ -75,6 +80,6 @@ export async function finishForStore(store, { toast, onDone }) {
       toast('Those items were already off the list.');
       return;
     }
-    openFinishSheet(store, ticked, remaining, { onDone: async (n) => { await onDone?.(n); toast(doneMessage(n)); } });
+    openFinishSheet(store, ticked, remaining, { onDone: async (n, message) => { await onDone?.(n); toast(message); } });
   } catch (err) { toast(err.message); }
 }

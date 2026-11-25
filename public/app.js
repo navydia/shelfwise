@@ -85,15 +85,12 @@ async function render() {
     return;
   }
   if (!state.stores.length) { renderFirstRun(); return; }
-  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open(), openSettings, reloadStores: () => reloadAfterEdit() }); }
+  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open(), reloadStores: () => reloadAfterEdit() }); }
   catch (err) {
     if (stale()) return;
     root.replaceChildren(errorState({ title: VIEW_TITLES[view], message: err.message, onRetry: render }));
   }
 }
-
-// Interim: the List's cog still opens the store menu until List settings land. The Pantry has its own settings sheet.
-function openSettings() { storePicker.open(); }
 
 function renderFirstRun() {
   const steps = ['Add the things you always buy.', 'Tap the basket when one runs low. It goes on your list.', 'Snap the receipt so prices stay real.'];
