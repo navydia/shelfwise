@@ -106,13 +106,30 @@ body:has(.finish-pill) { padding-bottom: calc(160px + env(safe-area-inset-bottom
 .dock > * { pointer-events: auto; }
 .glass { background: rgba(251, 249, 245, .76); -webkit-backdrop-filter: blur(14px) saturate(170%); backdrop-filter: blur(14px) saturate(170%); border: 1px solid rgba(255, 255, 255, .75);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), inset 0 -1px 1px rgba(30, 21, 25, .06), 0 10px 28px rgba(30, 21, 25, .18), 0 1px 3px rgba(30, 21, 25, .12); }
-.tabs { width: 100%; height: 62px; border-radius: 31px; display: flex; align-items: center; padding: 0 5px; overflow: hidden; transition: width .3s ease; }
-.tabs a { flex: 1; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 26px; font-family: var(--font-disp); font-weight: 700; font-size: 10.5px; color: var(--tab-label); text-decoration: none; }
+.tabs { width: 164px; height: 62px; border-radius: 31px; display: flex; align-items: center; padding: 0 5px; overflow: hidden; transition: width .3s ease; }
+.tabs a { position: relative; flex: 1; height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 26px; font-family: var(--font-disp); font-weight: 700; font-size: 10.5px; color: var(--tab-label); text-decoration: none; }
 .tabs a[aria-current=page] { color: var(--f950); background: rgba(74, 50, 66, .11); }
 .ic { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 .dock.mini .tabs { width: 62px; padding: 0; }
 .dock.mini .tabs a:not([aria-current=page]) { display: none; }
 .dock.mini .tabs a[aria-current=page] { flex: 1; height: 100%; font-size: 0; gap: 0; border-radius: 31px; background: transparent; }
+.badge { position: absolute; top: 4px; left: calc(50% + 4px); min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px; background: var(--f950); color: var(--butter); font-family: var(--font-disp); font-style: normal; font-weight: 800; font-size: 11.5px; line-height: 1; display: grid; place-items: center; box-shadow: 0 0 0 2px var(--card); }
+.badge[hidden] { display: none; }
+/* Receipt button: icon only, bottom right, stays when the bar collapses. Pantry only. */
+.fab { margin-left: auto; flex: none; width: 56px; height: 56px; border-radius: 28px; background: var(--f950); color: var(--butter); display: grid; place-items: center; text-decoration: none; box-shadow: 0 8px 20px rgba(30, 21, 25, .3), inset 0 1px 0 rgba(255, 255, 255, .12); }
+.fab .ic { width: 24px; height: 24px; }
+.fab[hidden] { display: none; }
+.fab:focus-visible { outline-color: var(--butter); outline-offset: 3px; }
+/* Page title with a plain cog on the same line (no fill, no border; 44px tap area). */
+.title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0 12px; }
+.title-row .title { margin: 0; min-width: 0; }
+.cog { flex: none; width: var(--tap); height: var(--tap); min-height: var(--tap); margin-right: -10px; padding: 0; background: transparent; border: 0; box-shadow: none; color: var(--f950); display: grid; place-items: center; border-radius: 22px; }
+.cog .ic { width: 24px; height: 24px; }
+/* Full-screen Receipt route: a back link under the header instead of the tab bar */
+.back-link { display: inline-flex; align-items: center; gap: 2px; min-height: var(--tap); padding: 0 16px 0 12px; font-family: var(--font-disp); font-weight: 700; font-size: 15px; color: var(--fig); text-decoration: none; }
+.back-link[hidden] { display: none; }
+.back-link .ic { width: 20px; height: 20px; }
+.thumb.emo { font-size: 22px; line-height: 1; background: var(--sunken); }
 #dock-action { margin-left: 8px; flex: 1; display: flex; justify-content: flex-end; }
 #dock-action:empty { display: none; }
 @media (prefers-reduced-motion: reduce) { .tabs, .switch::after { transition: none; } }
@@ -138,10 +155,6 @@ body:has(.finish-pill) { padding-bottom: calc(160px + env(safe-area-inset-bottom
 .sec > .rows[hidden] { display: none; }
 .thumb { width: 44px; height: 44px; flex: none; border-radius: 10px; object-fit: cover; background: var(--paper); display: grid; place-items: center; font-family: var(--font-disp); font-weight: 800; font-size: 18px; color: var(--stone); }
 mark { background: var(--butter); color: var(--f950); border-radius: 3px; padding: 0 1px; }
-.subline { margin: -6px 2px 16px; font-size: 14.5px; line-height: 1.5; color: var(--stone); }
-.subline[hidden], .find[hidden] { display: none; }
-.sub-link { position: relative; display: inline; min-height: 0; padding: 0; background: transparent; font: inherit; font-weight: 700; color: var(--fig); text-decoration: underline; text-underline-offset: 3px; }
-.sub-link::before { content: ''; position: absolute; inset: -14px -8px; } /* 44px tap target, same look */
 .fbtn { position: relative; flex: none; width: 36px; height: 36px; min-height: 36px; padding: 0; display: grid; place-items: center; border-radius: 10px; background: transparent; color: var(--f900); }
 .fbtn .ic { width: 20px; height: 20px; }
 .fbtn::before { content: ''; position: absolute; inset: -4px; } /* 44px tap target, 36px look */

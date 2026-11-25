@@ -47,7 +47,7 @@ describe('ui smoke', () => {
   });
   it('tokens_css_has_store_colours', async () => {
     const css = (await makeApp().api.get('/tokens.css')).text;
-    for (const hex of ['#4A3242', '#5A2E36', '#553423', '#40402A', '#2D4334', '#22434A', '#2E3A55', '#3A3D45']) {
+    for (const hex of ['#D2452F', '#C2620F', '#C0306E', '#7A4FD0', '#2F6FD6', '#0E8A86', '#3E8E2F', '#5E6B7D']) {
       expect(css.toUpperCase(), hex).toContain(hex);
     }
   });

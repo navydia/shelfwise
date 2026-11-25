@@ -1,13 +1,13 @@
 import * as api from '../api.js';
 import { openSheet } from '../ui/sheet.js';
 
-export const STORE_COLOURS = ['fig', 'claret', 'cinnamon', 'olive', 'forest', 'teal', 'harbor', 'slate'];
+export const STORE_COLOURS = ['tomato', 'pumpkin', 'berry', 'violet', 'blue', 'teal', 'green', 'slate'];
 const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
 // store === null adds a new store. Server errors (409s) show inline in the sheet.
 export function openStoreSheet(store, { onSaved, onDeleted } = {}) {
   const isNew = !store;
-  let colour = store?.color ?? 'fig';
+  let colour = store?.color ?? 'tomato';
   let isMain = store?.isMain ?? false;
   const wasMain = isMain;
 

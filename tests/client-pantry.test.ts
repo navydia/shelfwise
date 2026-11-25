@@ -65,4 +65,10 @@ describe('pantryView', () => {
     expect(v.mode).toBe('flat');
     expect(v.sections[0].items.map((i: any) => i.id)).toEqual([2, 3, 1]);
   });
+
+  it('archived_staples_never_show', () => {
+    const v = pantryView([it_(1, 'a'), it_(2, 'b', { archived: true })], { ...base, sort: 'name' }, ctx);
+    expect(v.sections[0].items.map((i: any) => i.id)).toEqual([1]);
+    expect(pantryView([it_(1, 'a'), it_(2, 'ab', { archived: true })], { ...base, query: 'a' }, ctx).shown).toBe(1);
+  });
 });

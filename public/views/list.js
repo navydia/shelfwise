@@ -10,6 +10,10 @@ import { icon } from '../ui/icons.js';
 import { fmt, priceParts } from '../lib/money.js';
 import { openBudgetSheet, budgetKey } from './budget-sheet.js';
 import { finishForStore } from './finish-sheet.js';
+import { titleRow } from '../ui/title-row.js';
+import { revealOnFocus } from '../ui/sheet.js';
+import { lineKey } from '../lib/trip.js';
+import { lineDetail } from '../lib/sizes.js';
 
 const BY = [['aisle', 'Aisle'], ['category', 'Category'], ['none', 'None']];
 const BY_LABEL = { aisle: 'By aisle', category: 'By category', none: 'No grouping' };
@@ -72,7 +76,7 @@ export async function renderList(root, ctx) {
   // First open: the title and a skeleton card until the data arrives. A redraw keeps what is on screen.
   // If the load fails, app.js clears the page and shows the error in its place.
   if (!root.querySelector('[data-list]')) {
-    const t = el('h1', 'title', 'List');
+    const t = titleRow('Shopping List', ctx.openSettings);
     t.dataset.list = '1';
     root.replaceChildren(t, skeletonRows());
   }
@@ -90,7 +94,7 @@ export async function renderList(root, ctx) {
   const groupBtn = el('button', 'link groupbtn'); groupBtn.type = 'button';
   bar.append(need, groupBtn);
   const sections = el('div', 'sections lst');
-  const title = el('h1', 'title', 'List');
+  const title = titleRow('Shopping List', ctx.openSettings);
   title.dataset.list = '1';
   root.append(title, tripBox, tagBtn, bar, sections);
 
@@ -111,6 +115,7 @@ export async function renderList(root, ctx) {
   const form = el('form', 'addform'); form.hidden = true;
   form.innerHTML = '<input type="text" name="name" placeholder="Add to this list" autocomplete="off" aria-label="Add item to list"><button type="submit" class="add-go">Add</button><button type="button" class="add-cancel">Cancel</button>';
   addBox.append(addBtn, form);
+  revealOnFocus(addBox);
   function setAdding(on) {
     form.hidden = !on; addBtn.hidden = on;
     addBox.classList.toggle('open', on);
@@ -137,11 +142,10 @@ export async function renderList(root, ctx) {
     const tick = el('button', 'tick'); tick.type = 'button';
     tick.setAttribute('aria-pressed', String(ticked));
     tick.setAttribute('aria-label', `Tick ${l.name}`);
-    tick.addEventListener('click', () => { api.trips.toggle(storeId, l.id); drawLive(); });
-    const thumb = l.photo ? Object.assign(el('img', 'thumb'), { src: `/photos/${l.photo}`, alt: '' }) : el('div', 'thumb', l.name[0]?.toUpperCase() ?? '');
+    tick.addEventListener('click', () => { api.trips.toggle(storeId, lineKey(l)); drawLive(); });
     const info = el('div', 'info');
-    info.append(el('div', 'nm', l.name), el('div', 'sub', l.lineCents == null ? 'No price yet · not counted' : `${l.usualQty} × ${fmt(l.lastPriceCents)}`));
-    row.append(tick, thumb, info);
+    info.append(el('div', 'nm', l.name), el('div', 'sub', lineDetail(l)));
+    row.append(tick, info);
     if (l.lineCents != null) row.append(el('span', 'rprice', fmt(l.lineCents)));
     else { const d = el('span', 'dash', '–'); d.setAttribute('aria-hidden', 'true'); row.append(d); }
     return row;
@@ -162,7 +166,7 @@ export async function renderList(root, ctx) {
   // Redraws the bar, pill and groups from the data already loaded: ticking sends no request.
   function drawLive() {
     const ids = new Set(api.trips.get(storeId).ids);
-    const ticked = new Set(lines.filter((l) => ids.has(l.id)).map((l) => l.id));
+    const ticked = new Set(lines.map(lineKey).filter((k) => ids.has(k)));
     const toGet = lines.length - ticked.size;
     const st = listState(toGet, ticked.size);
     tagBtn.hidden = bar.hidden = st === 'empty';
@@ -200,7 +204,7 @@ export async function renderList(root, ctx) {
       const sec = el('section', 'sec');
       if (g.title) { const h = el('h2', 'ghd'); h.append(el('span', 'lab', g.title), el('span', 'ct', String(g.items.length))); sec.append(h); }
       const card = el('div', 'grp');
-      for (const l of g.items) card.append(rowFor(l, ticked.has(l.id)));
+      for (const l of g.items) card.append(rowFor(l, ticked.has(lineKey(l))));
       if (st === 'normal' && i === addAt) card.append(addBox);
       sec.append(card);
       sections.append(sec);

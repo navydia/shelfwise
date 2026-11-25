@@ -5,7 +5,10 @@ import { emptyState } from '../ui/empty-state.js';
 import { skeletonRows } from '../ui/skeleton.js';
 import { pantryView } from '../lib/pantry-view.js';
 import { COMMON_STAPLES, remainingCommonStaples, pantryEmptyKind, describeFilters } from '../lib/screen-states.js';
-import { fmt } from '../lib/money.js';
+import { sizeSummary } from '../lib/sizes.js';
+import { stapleKey } from '../lib/trip.js';
+import { thumb } from '../ui/thumb.js';
+import { titleRow } from '../ui/title-row.js';
 import { openFilterSheet, defaultSort } from './filter-sheet.js';
 import { openStapleSheet } from './staple-sheet.js';
 
@@ -51,7 +54,7 @@ export async function renderPantry(root, ctx) {
   const singleStore = storeId != null;
   // First open: the title and a skeleton card until the data arrives. A redraw keeps what is on screen.
   if (!root.querySelector('[data-pantry]')) {
-    const t = el('h1', 'title', 'Pantry');
+    const t = titleRow('Pantry', ctx.openSettings);
     t.dataset.pantry = '1';
     root.replaceChildren(t, skeletonRows());
   }
@@ -64,9 +67,8 @@ export async function renderPantry(root, ctx) {
   const view = (o) => pantryView(items, o, viewCtx);
 
   root.innerHTML = '';
-  const title = el('h1', 'title', 'Pantry');
+  const title = titleRow('Pantry', ctx.openSettings);
   title.dataset.pantry = '1';
-  const subline = el('p', 'subline');
   const tripBox = el('div', 'trip-cards');
   const find = el('div', 'find');
   const search = el('label', 'search');
@@ -81,25 +83,15 @@ export async function renderPantry(root, ctx) {
   find.append(search, addBtn);
   const active = el('div', 'active');
   const sections = el('div', 'sections pan');
-  root.append(title, subline, tripBox, find, active, sections);
+  root.append(title, tripBox, find, active, sections);
 
   const redraw = () => renderPantry(root, ctx);
   const mainId = stores.find((s) => s.isMain)?.id ?? stores[0]?.id;
-  const targetStoreId = storeId ?? mainId; // new staples and "View list": the picked store, or the main store under All stores
+  const targetStoreId = storeId ?? mainId; // new staples: the picked store, or the main store under All stores
   const openStaple = (item, extra = {}) => pantryHooks.openStapleSheet(item, {
     stores, categories, defaultStoreId: targetStoreId, onSaved: redraw, onDeleted: redraw, toast, ...extra,
   });
   addBtn.addEventListener('click', () => openStaple(null));
-
-  function drawSubline() {
-    const n = items.filter((i) => i.onList).length;
-    subline.hidden = n === 0;
-    subline.replaceChildren();
-    if (!n) return;
-    const go = el('button', 'sub-link', 'View list'); go.type = 'button';
-    go.addEventListener('click', () => { state.storeId = targetStoreId; api.store.set('sw-store', targetStoreId); location.hash = '#/list'; });
-    subline.append(`${n} ${n === 1 ? 'staple' : 'staples'} on your list · `, go);
-  }
 
   function drawTrips() {
     renderTripCards(tripBox, {
@@ -110,9 +102,9 @@ export async function renderPantry(root, ctx) {
   }
 
   function paintDetail(sub, item, flatAll) {
-    const price = item.lastPriceCents == null ? null
-      : item.usualQty > 1 ? `${item.usualQty} × ${fmt(item.lastPriceCents)}` : fmt(item.lastPriceCents);
-    const cue = api.trips.get(item.storeId).ids.includes(item.id) ? 'In the cart' : item.onList ? 'On your list' : null;
+    const summary = sizeSummary(item);
+    const price = summary === 'No price yet' ? null : summary;
+    const cue = api.trips.get(item.storeId).ids.includes(stapleKey(item.id)) ? 'In the cart' : item.onList ? 'On your list' : null;
     const rest = [price ?? (cue ? null : 'No price yet'), flatAll ? storeName(item.storeId) : null].filter(Boolean).join(' · ');
     sub.replaceChildren();
     if (cue) sub.append(el('b', '', cue));
@@ -123,12 +115,12 @@ export async function renderPantry(root, ctx) {
     const flatAll = v.mode === 'flat' && !singleStore;
     const row = el('div', 'row');
     const main = el('button', 'row-main'); main.type = 'button';
-    const thumb = item.photo ? Object.assign(el('img', 'thumb'), { src: `/photos/${item.photo}`, alt: '' }) : el('div', 'thumb', item.name[0]?.toUpperCase() ?? '');
+    const pic = thumb(item);
     const info = el('div', 'info');
     const nm = el('div', 'nm'); highlight(nm, item.name, q);
     const sub = el('div', 'sub');
     info.append(nm, sub);
-    main.append(thumb, info);
+    main.append(pic, info);
     main.addEventListener('click', () => openStaple(item));
     const btn = el('button', 'onlist-btn'); btn.type = 'button';
     const paint = () => {
@@ -143,9 +135,9 @@ export async function renderPantry(root, ctx) {
       if (busy) return;
       busy = true;
       const want = !item.onList;
-      item.onList = want; paint(); drawSubline();
-      try { Object.assign(item, await api.patchItem(item.id, { onList: want })); paint(); drawSubline(); }
-      catch (err) { item.onList = !want; paint(); drawSubline(); toast(err.message); }
+      item.onList = want; paint();
+      try { Object.assign(item, await api.patchItem(item.id, { onList: want })); paint(); }
+      catch (err) { item.onList = !want; paint(); toast(err.message); }
       finally { busy = false; }
     });
     paint();
@@ -278,6 +270,5 @@ export async function renderPantry(root, ctx) {
   clr.addEventListener('click', () => { input.value = ''; opts.query = ''; clr.hidden = true; drawSections(); input.focus(); });
 
   drawTrips();
-  drawSubline();
   drawSections();
 }

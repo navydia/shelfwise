@@ -21,10 +21,12 @@
     <button id="store-btn" class="store-pill" type="button" aria-label="Store" hidden></button>
   </header>
   <div id="offline" class="offline" hidden>Offline: showing saved data</div>
+  <a id="back-link" class="back-link" href="#/pantry" hidden><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M15 6l-6 6 6 6"/></svg>Pantry</a>
   <main id="view"></main>
   <div class="dock" hidden>
     <nav class="tabs glass" id="tabs" aria-label="Sections"></nav>
     <div id="dock-action"></div>
+    <a id="fab" class="fab" href="#/receipt" aria-label="Scan a receipt" hidden></a>
   </div>
   <script type="module">
     import { wordmarkHtml } from '/ui/wordmark.js';
