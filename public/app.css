@@ -162,10 +162,10 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .pan > .sec:first-child .ghd { margin-top: 8px; }
 .grp { background: var(--card); border-radius: 16px; box-shadow: var(--lift-2); overflow: hidden; }
 .grp[hidden] { display: none; }
-.grp .row { margin: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 10px 12px; min-height: 60px; gap: 12px; }
+.grp .row { position: relative; margin: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 10px 12px; min-height: 60px; gap: 12px; }
 .grp .row + .row::before { content: ''; position: absolute; top: 0; right: 0; left: 64px; border-top: 1px solid var(--line); }
 .row-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; background: transparent; text-align: left; border-radius: 10px; }
-.grp .thumb { width: 40px; height: 40px; border-radius: 10px; background: #ECE6DA; }
+.grp .thumb { width: 40px; height: 40px; border-radius: 10px; background: var(--sunken); }
 .row .info { min-width: 0; flex: 1; }
 .row .nm { color: var(--f950); font-size: 16px; font-weight: 600; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .row .sub { margin-top: 1px; font-size: 14px; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -294,7 +294,7 @@ form.add button { min-height: var(--tap); padding: 0 16px; border-radius: 12px; 
 
 /* Shared empty state (public/ui/empty-state.js) */
 .empty-state { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 30px 10px 0; }
-.es-ico { width: 68px; height: 68px; border-radius: 50%; background: #E9E3D8; display: grid; place-items: center; color: var(--fig); margin-bottom: 16px; box-shadow: inset 0 1px 2px rgba(30, 21, 25, .08); }
+.es-ico { width: 68px; height: 68px; border-radius: 50%; background: var(--sunken); display: grid; place-items: center; color: var(--fig); margin-bottom: 16px; box-shadow: inset 0 1px 2px rgba(30, 21, 25, .08); }
 .es-ico .ic { width: 30px; height: 30px; stroke-width: 1.8; }
 .empty-state .es-title { font-family: var(--font-title); font-weight: 800; font-size: 21px; letter-spacing: -.015em; line-height: 1.2; color: var(--f950); margin: 0 0 6px; }
 .es-body { font-size: 15px; line-height: 1.5; color: var(--stone); margin: 0 0 18px; max-width: 280px; }
@@ -307,7 +307,7 @@ form.add button { min-height: var(--tap); padding: 0 16px; border-radius: 12px; 
 .sk-card { background: var(--card); border-radius: 16px; box-shadow: var(--lift-2); overflow: hidden; }
 .sk-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; }
 .sk-row + .sk-row { border-top: 1px solid var(--line); }
-.sk { background: linear-gradient(90deg, #E9E3D8 0%, #F2EDE4 50%, #E9E3D8 100%); background-size: 200% 100%; border-radius: 8px; animation: sk-shimmer 1.4s infinite linear; }
+.sk { background: linear-gradient(90deg, var(--sunken) 0%, var(--sunken-hi) 50%, var(--sunken) 100%); background-size: 200% 100%; border-radius: 8px; animation: sk-shimmer 1.4s infinite linear; }
 .sk-block { width: 40px; height: 40px; flex: none; }
 .sk-bars { flex: 1; display: grid; gap: 8px; }
 .sk-bar { height: 12px; width: 70%; }
