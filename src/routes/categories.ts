@@ -37,8 +37,8 @@ export function categoriesRouter(db: Db): Router {
   r.delete('/:id', (req, res) => {
     const id = Number(req.params.id);
     if (!db.prepare('select 1 from categories where id = ?').get(id)) return res.status(404).json({ error: 'category not found' });
-    // Archived staples keep their category, so they count as "in use" too.
-    const { n } = db.prepare('select count(*) as n from items where category_id = ?').get(id) as { n: number };
+    // Only non-archived staples block deletion (matches GET count); archived ones fall to uncategorized via on delete set null.
+    const { n } = db.prepare('select count(*) as n from items where category_id = ? and archived_at is null').get(id) as { n: number };
     if (n > 0) return res.status(409).json({ error: `Move its ${n} staples first`, staples: n });
     db.prepare('delete from categories where id = ?').run(id);
     res.status(204).end();

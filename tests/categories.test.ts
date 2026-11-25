@@ -83,3 +83,27 @@ describe('categories API: management', () => {
     expect(row).toEqual({ id: c.id, name: 'Spices', count: 1 });
   });
 });
+
+describe('categories API: archived staples', () => {
+  it('delete_category_ignores_archived_staples', async () => {
+    const { api, db } = makeApp();
+    const store = (await api.post('/api/stores').send({ name: 'Main' })).body;
+    const c = (await api.post('/api/categories').send({ name: 'Spices' })).body;
+    const old = (await api.post('/api/items').send({ name: 'Mace', storeId: store.id, categoryId: c.id })).body;
+    await api.patch(`/api/items/${old.id}`).send({ archived: true });
+    expect((await api.delete(`/api/categories/${c.id}`)).status).toBe(204);
+    expect(db.prepare('select category_id from items where id = ?').get(old.id)).toEqual({ category_id: null });
+  });
+  it('delete_409_count_matches_get_count', async () => {
+    const { api } = makeApp();
+    const store = (await api.post('/api/stores').send({ name: 'Main' })).body;
+    const c = (await api.post('/api/categories').send({ name: 'Spices' })).body;
+    await api.post('/api/items').send({ name: 'Salt', storeId: store.id, categoryId: c.id });
+    const old = (await api.post('/api/items').send({ name: 'Mace', storeId: store.id, categoryId: c.id })).body;
+    await api.patch(`/api/items/${old.id}`).send({ archived: true });
+    const count = (await api.get('/api/categories')).body.find((x: { id: number }) => x.id === c.id).count;
+    const res = await api.delete(`/api/categories/${c.id}`);
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Move its 1 staples first', staples: count });
+  });
+});

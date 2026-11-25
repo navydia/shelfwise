@@ -112,3 +112,14 @@ describe('stores API: aisles', () => {
     expect((await api.post('/api/stores/9999/aisles/rename').send({ from: '4', to: 'x' })).status).toBe(404);
   });
 });
+
+describe('stores API: aisle rename and archived', () => {
+  it('rename_aisle_also_renames_archived', async () => {
+    const { api, db } = makeApp();
+    const a = (await api.post('/api/stores').send({ name: 'A' })).body;
+    const it = (await api.post('/api/items').send({ name: 'p', storeId: a.id, aisle: '3' })).body;
+    await api.patch(`/api/items/${it.id}`).send({ archived: true });
+    await api.post(`/api/stores/${a.id}/aisles/rename`).send({ from: '3', to: '7' });
+    expect(db.prepare('select aisle from items where id = ?').get(it.id)).toEqual({ aisle: '7' });
+  });
+});
