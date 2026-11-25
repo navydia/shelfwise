@@ -250,9 +250,11 @@ export async function renderPantry(root, ctx) {
     fbtn.className = `fbtn${v.activeFilters ? ' on' : ''}`;
     fbtn.innerHTML = icon('filter') + (v.activeFilters ? `<span class="badge">${v.activeFilters}</span>` : '');
     fbtn.setAttribute('aria-label', v.activeFilters ? `Filter, ${v.activeFilters} active` : 'Filter');
-    active.hidden = !v.activeFilters;
+    // With no staples at all, the empty state is the whole story: persisted filters have nothing to filter.
+    const showBar = v.activeFilters && v.total > 0;
+    active.hidden = !showBar;
     active.innerHTML = '';
-    if (!v.activeFilters) return;
+    if (!showBar) return;
     const msg = el('span');
     msg.append('Showing ', el('b', '', names.join(' · ')), ` · ${v.shown} of ${v.total}`);
     const clear = el('button', 'link', 'Clear'); clear.type = 'button';

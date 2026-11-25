@@ -1,6 +1,8 @@
 import * as api from '../api.js';
 import { icon } from '../ui/icons.js';
 import { openSheet } from '../ui/sheet.js';
+import { emptyState } from '../ui/empty-state.js';
+import { skeletonRows } from '../ui/skeleton.js';
 import { fmt, priceParts } from '../lib/money.js';
 
 function el(tag, className, text) {
@@ -24,6 +26,10 @@ const todayLabel = () => { const d = new Date(); return `${d.toLocaleDateString(
 export async function renderReceipt(root, ctx) {
   const { storeId, toast, state } = ctx;
   const store = state?.stores?.find((s) => s.id === storeId);
+  // Title and a skeleton card until the staples arrive.
+  const loadHead = el('div', 'rc-head');
+  loadHead.append(el('h1', 'title', 'Receipt'));
+  root.replaceChildren(loadHead, skeletonRows(3));
   const items = await api.getItems(storeId);
   if (ctx.stale?.()) return;
   const itemById = new Map(items.map((i) => [i.id, i]));
@@ -35,21 +41,29 @@ export async function renderReceipt(root, ctx) {
   head.append(retake);
   root.append(head);
 
-  const pick = el('label', 'card rc-pick');
-  const text = el('span', 'grow');
-  text.append(el('span', 'nm', 'Photograph a receipt'), el('span', 'sub', 'Lay it flat in good light. You confirm every match before prices change.'));
-  const cam = el('span', 'rc-cam');
-  cam.innerHTML = icon('camera');
-  cam.setAttribute('role', 'img'); cam.setAttribute('aria-label', 'Take photo');
-  const file = el('input'); file.type = 'file'; file.accept = 'image/*'; file.hidden = true;
-  pick.append(text, cam, file);
+  // Two inputs feed one upload flow: the camera, and the photo library (no capture attribute).
+  const mkInput = (capture) => {
+    const f = el('input'); f.type = 'file'; f.accept = 'image/*'; f.hidden = true;
+    if (capture) f.setAttribute('capture', 'environment');
+    return f;
+  };
+  const camera = mkInput(true);
+  const library = mkInput(false);
+  const pick = emptyState({
+    icon: 'camera', title: 'Snap your receipt',
+    body: 'Lay it flat in good light. You check every match before a price changes.',
+    primary: { label: 'Take a photo', icon: 'camera', onClick: () => camera.click() },
+    secondary: { label: 'Choose from photos', onClick: () => library.click() },
+  });
+  pick.classList.add('rc-pick');
+  pick.append(camera, library);
   root.append(pick);
 
   const out = el('div', 'rc-out');
   root.append(out);
   retake.addEventListener('click', () => renderReceipt(root, ctx));
 
-  file.addEventListener('change', async () => {
+  async function onFile(file) {
     if (!file.files[0]) return;
     out.replaceChildren(el('p', 'empty', 'Reading receipt…'));
     let result;
@@ -62,7 +76,9 @@ export async function renderReceipt(root, ctx) {
     }
     pick.hidden = true; retake.hidden = false;
     showMatches(out, result, { items, itemById, store, toast, retake });
-  });
+  }
+  camera.addEventListener('change', () => onFile(camera));
+  library.addEventListener('change', () => onFile(library));
 }
 
 function openPicker(items, onPick) {

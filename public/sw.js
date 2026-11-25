@@ -1,6 +1,6 @@
 // Shelfwise service worker: caches the app shell and saves recent read responses
 // so the list and prices still show with weak or no signal. Writes are never queued.
-const VERSION = 'v13';
+const VERSION = 'v14';
 const SHELL_CACHE = `shelfwise-shell-${VERSION}`;
 const DATA_CACHE = `shelfwise-data-${VERSION}`;
 const SHELL = [
@@ -9,7 +9,7 @@ const SHELL = [
   '/ui/wordmark.js', '/ui/icons.js', '/ui/sheet.js', '/ui/tabbar.js', '/ui/store-picker.js', '/ui/empty-state.js', '/ui/skeleton.js',
   '/views/store-sheet.js', '/views/staple-sheet.js', '/views/filter-sheet.js', '/ui/trip-cards.js', '/views/settings.js', '/views/finish-sheet.js', '/views/budget-sheet.js',
   '/lib/budget-tag.js', '/lib/list-groups.js', '/lib/money.js', '/lib/pantry-view.js', '/lib/trip.js', '/lib/screen-states.js',
-  '/fonts/figtree-400.woff2', '/fonts/figtree-600.woff2', '/fonts/figtree-700.woff2', '/fonts/figtree-800.woff2', '/fonts/bricolage-700.woff2', '/fonts/bricolage-800.woff2', '/fonts/plex-mono-400.woff2',
+  '/fonts/figtree-400.woff2', '/fonts/figtree-600.woff2', '/fonts/figtree-700.woff2', '/fonts/figtree-800.woff2', '/fonts/bricolage-800.woff2', '/fonts/plex-mono-400.woff2',
 ];
 
 self.addEventListener('install', (event) => {

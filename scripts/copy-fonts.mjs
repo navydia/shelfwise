@@ -8,7 +8,6 @@ const FILES = [
   ['figtree', 'figtree-latin-600-normal.woff2', 'figtree-600.woff2'],
   ['figtree', 'figtree-latin-700-normal.woff2', 'figtree-700.woff2'],
   ['figtree', 'figtree-latin-800-normal.woff2', 'figtree-800.woff2'],
-  ['bricolage-grotesque', 'bricolage-grotesque-latin-700-normal.woff2', 'bricolage-700.woff2'],
   ['bricolage-grotesque', 'bricolage-grotesque-latin-800-normal.woff2', 'bricolage-800.woff2'],
   ['ibm-plex-mono', 'ibm-plex-mono-latin-400-normal.woff2', 'plex-mono-400.woff2'],
 ];

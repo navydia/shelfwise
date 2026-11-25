@@ -27,6 +27,7 @@ export function mountStorePicker(btn, { getStores, current, allowAll, onPick, on
   const text = (t) => Object.assign(document.createElement('span'), { className: 'nm', textContent: t });
 
   function open() {
+    if (menu) return;
     const cur = current();
     menu = document.createElement('div');
     menu.className = 'menu'; menu.setAttribute('role', 'menu');
@@ -64,5 +65,5 @@ export function mountStorePicker(btn, { getStores, current, allowAll, onPick, on
   }
 
   btn.addEventListener('click', () => (menu ? close() : open()));
-  return { close };
+  return { close, open };
 }

@@ -35,7 +35,10 @@ function route() {
 const mainStore = () => state.stores.find((s) => s.isMain) ?? state.stores[0] ?? null;
 const storeById = (id) => state.stores.find((s) => s.id === id) ?? null;
 
+const dock = document.querySelector('.dock');
+
 function drawPill(view) {
+  dock.hidden = state.stores.length === 0; // first run: no tab bar until a store exists
   const showPill = state.stores.length > 0 && view !== 'settings';
   storeBtn.hidden = !showPill;
   if (!showPill) return;
@@ -64,16 +67,19 @@ async function render() {
     return;
   }
   if (!state.stores.length) { renderFirstRun(); return; }
-  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale }); }
+  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open() }); }
   catch (err) { if (stale()) return; root.innerHTML = ''; toast(err.message); }
 }
 
 function renderFirstRun() {
-  root.innerHTML = `<form class="first-run card" id="first">
-    <h1 class="title">Name the store you shop at most</h1>
-    <input type="text" name="name" placeholder="Store name" aria-label="Main store name" autocomplete="off">
+  const steps = ['Add the things you always buy.', 'Tap the basket when one runs low. It goes on your list.', 'Snap the receipt so prices stay real.'];
+  root.innerHTML = `<form class="first-run" id="first" novalidate>
+    <h1 class="fr-title">Never forget a staple again</h1>
+    <ol class="fr-steps">${steps.map((t, i) => `<li><i>${i + 1}</i><span>${t}</span></li>`).join('')}</ol>
+    <label class="fr-field"><span>Where do you shop most?</span>
+      <input type="text" name="name" placeholder="e.g. Market Basket" autocomplete="off"></label>
     <p class="msg" role="alert" hidden></p>
-    <button class="btn-main">Create</button>
+    <button class="es-primary" type="submit">Get started</button>
   </form>`;
   const form = root.querySelector('#first');
   form.addEventListener('submit', async (e) => {
@@ -107,7 +113,7 @@ async function reloadAfterEdit(select) {
 
 pantryHooks.finishTrip = (id, { redraw }) => finishForStore(storeById(id), { toast, onDone: redraw });
 
-mountStorePicker(storeBtn, {
+const storePicker = mountStorePicker(storeBtn, {
   getStores: () => state.stores,
   current: () => (route() === 'pantry' ? state.pantryStoreId : state.storeId),
   allowAll: () => route() === 'pantry',
