@@ -16,8 +16,8 @@ export function openStoreSheet(store, { onSaved, onDeleted } = {}) {
   body.noValidate = true;
   body.innerHTML = `
     <label class="field">Name<input type="text" name="name" autocomplete="off" maxlength="60"></label>
-    <div class="field-label" id="colour-label">Banner colour</div>
-    <div class="store-banner" id="preview"><span class="pv-name"></span><span class="count">Preview</span></div>
+    <div class="field-label" id="colour-label">Colour</div>
+    <div class="shd pv" id="preview" aria-hidden="true"><i class="dot"></i><span class="nm"></span></div>
     <div class="sw8" role="group" aria-labelledby="colour-label"></div>
     <div class="tog"><span id="main-label">Main store</span><button type="button" class="switch" role="switch" aria-labelledby="main-label"></button></div>
     <p class="msg" role="alert" hidden></p>
@@ -31,8 +31,8 @@ export function openStoreSheet(store, { onSaved, onDeleted } = {}) {
   const fail = (text) => { msg.textContent = text; msg.hidden = false; };
 
   const drawPreview = () => {
-    preview.style.background = `var(--store-${colour})`;
-    preview.querySelector('.pv-name').textContent = name.value.trim() || 'Store name';
+    preview.querySelector('.dot').style.background = `var(--store-${colour})`;
+    preview.querySelector('.nm').textContent = name.value.trim() || 'Store name';
   };
   const drawSwitch = () => {
     sw.setAttribute('aria-checked', String(isMain));

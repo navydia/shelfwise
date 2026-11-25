@@ -28,13 +28,19 @@ def first_launch_offline(b, s, m):
 
 def finish_shopping_via_ui(b, s, m):
     ctx = b.new_context(viewport={'width': 390, 'height': 780}); pg = ctx.new_page()
-    pg.goto(BASE + '/#/list'); pg.wait_for_selector('.budget-tag'); pg.wait_for_selector('.row .tick')
-    pg.click('.row .tick'); pg.wait_for_selector('.finish-pill')
-    pg.click('.finish-pill'); pg.wait_for_selector('.sheet .btn-main:has-text("Finish shopping")', timeout=3000)
+    pg.goto(BASE + '/#/list'); pg.wait_for_selector('[data-list]'); pg.wait_for_selector('.lst .row .tick')
+    pg.click('.row .tick')
+    # One finish action at a time: the dock pill while items are left to get, the empty-state button once everything is in the cart.
+    finish = pg.locator('.finish-pill, .empty-state .es-primary:has-text("Finish shopping")').first
+    finish.wait_for(); finish.click()
+    pg.wait_for_selector('.sheet .btn-main:has-text("Finish shopping")', timeout=3000)
     pg.click('.sheet .btn-main:has-text("Finish shopping")'); pg.wait_for_timeout(800)
-    pg.goto(BASE + '/#/list'); pg.wait_for_selector('.budget-tag')
-    ok = pg.locator('.row:has-text("Milk")').count() == 0 and pg.locator('.finish-pill').count() == 0
-    ctx.close(); return ok, 'tick Milk, Finish shopping, and it is no longer on the list'
+    pg.goto(BASE + '/#/list'); pg.reload()
+    # An empty List hides the budget tag, so wait for the List content itself.
+    pg.wait_for_selector('.lst .row, .lst .empty-state')
+    ok = (pg.locator('.row:has-text("Milk")').count() == 0 and pg.locator('.finish-pill').count() == 0
+          and pg.locator('.empty-state .es-title:has-text("Nothing to buy here")').count() == 1)
+    ctx.close(); return ok, 'tick Milk, Finish shopping, and the List shows "Nothing to buy here"'
 
 def pantry_toggle_on_list(b, s, m):
     ctx = b.new_context(viewport={'width': 390, 'height': 780}); pg = ctx.new_page()
@@ -52,7 +58,7 @@ def edit_item(b, s, m):
     pg.wait_for_selector('.sheet input[name=name]', timeout=3000)
     pg.click('.sheet .inc'); pg.click('.sheet .inc'); pg.fill('.sheet input[name=name]', 'Whole milk')
     pg.click('.sheet button:has-text("Save")'); pg.wait_for_timeout(600)
-    pg.goto(BASE + '/#/list'); pg.wait_for_selector('.budget-tag')
+    pg.goto(BASE + '/#/list'); pg.wait_for_selector('.lst .row')
     txt = pg.inner_text('#view')
     ok = '$12.00' in txt and 'Whole milk' in txt
     ctx.close(); return ok, 'quantity 3 x $4.00 = $12.00 and rename shows on the list'
@@ -70,9 +76,9 @@ def delete_item(b, s, m):
 def slow_network_falls_back(b, s, m):
     if os.path.exists(FLAG): os.remove(FLAG)
     ctx = b.new_context(viewport={'width': 390, 'height': 780}); pg = ctx.new_page()
-    pg.goto(BASE + '/#/list'); pg.wait_for_selector('.budget-tag'); pg.wait_for_timeout(1500); pg.reload(); pg.wait_for_selector('.budget-tag'); pg.wait_for_timeout(1500)
+    pg.goto(BASE + '/#/list'); pg.wait_for_selector('.lst .row'); pg.wait_for_timeout(1500); pg.reload(); pg.wait_for_selector('.lst .row'); pg.wait_for_timeout(1500)
     open(FLAG, 'w').close()
-    t = time.time(); pg.reload(); pg.wait_for_selector('.budget-tag', timeout=14000)
+    t = time.time(); pg.reload(); pg.wait_for_selector('.lst .row', timeout=14000)
     dt = time.time() - t; os.remove(FLAG)
     ctx.close(); return dt < 8, f'saved list shown within 8s when the server stalls (took {dt:.1f}s)'
 

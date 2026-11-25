@@ -210,7 +210,11 @@ export async function renderPantry(root, ctx) {
     const q = opts.query.trim().toLowerCase();
     sections.innerHTML = '';
     drawActive(v);
-    const kind = pantryEmptyKind({ totalInScope: v.total, shown: v.shown, query: opts.query, activeFilters: v.activeFilters });
+    // Search is only "no match" if it finds nothing even with the filters off; otherwise a filter is hiding it.
+    const noneShown = v.total > 0 && v.shown === 0 && opts.query.trim() !== '';
+    const queryMatchesIgnoringFilters = noneShown && v.activeFilters
+      ? view({ ...opts, show: 'all', categoryId: null, noPhoto: false }).shown : 0;
+    const kind = pantryEmptyKind({ totalInScope: v.total, shown: v.shown, query: opts.query, queryMatchesIgnoringFilters });
     find.hidden = kind === 'noStaples';
     if (kind) { drawEmpty(kind); return; }
     for (const sec of v.sections) {

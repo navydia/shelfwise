@@ -16,7 +16,7 @@ export function openFilterSheet(opts, { categories, singleStore, countFor, onApp
 
   const chips = (label, list, key) => {
     const g = document.createElement('div');
-    g.className = 'grp';
+    g.className = 'fgrp';
     g.innerHTML = '<div class="field-label"></div><div class="opts"></div>';
     g.firstChild.textContent = label;
     const wrap = g.lastChild;

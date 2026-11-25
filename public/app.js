@@ -7,6 +7,7 @@ import { renderPantry, pantryHooks } from './views/pantry.js';
 import { renderList } from './views/list.js';
 import { renderReceipt } from './views/receipt.js';
 import { finishForStore } from './views/finish-sheet.js';
+import { errorState } from './ui/empty-state.js';
 
 const root = document.getElementById('view');
 const offlineBar = document.getElementById('offline');
@@ -24,6 +25,7 @@ export function toast(message) {
   setTimeout(() => el.remove(), 5000);
 }
 
+const VIEW_TITLES = { pantry: 'Pantry', list: 'List', receipt: 'Receipt', settings: 'Settings' };
 const VIEWS = { pantry: renderPantry, list: renderList, receipt: renderReceipt, settings: renderSettings };
 
 function route() {
@@ -38,14 +40,18 @@ const storeById = (id) => state.stores.find((s) => s.id === id) ?? null;
 const dock = document.querySelector('.dock');
 
 function drawPill(view) {
-  dock.hidden = state.stores.length === 0; // first run: no tab bar until a store exists
+  dock.hidden = state.stores.length === 0 && !state.loadError; // first run: no tab bar until a store exists
   const showPill = state.stores.length > 0 && view !== 'settings';
   storeBtn.hidden = !showPill;
   if (!showPill) return;
   const s = view === 'pantry' ? storeById(state.pantryStoreId) : storeById(state.storeId);
   storeBtn.innerHTML = '<i class="dot"></i><span class="nm"></span><span class="caret"></span>';
   const dot = storeBtn.querySelector('.dot');
-  if (s) dot.style.background = `var(--store-${s.color})`; else dot.style.background = 'var(--f950)';
+  // All stores: the first two stores' colours side by side (one store: just its colour).
+  const swatch = (c) => `var(--store-${c.color})`;
+  if (s) dot.style.background = swatch(s);
+  else if (state.stores.length > 1) dot.style.background = `conic-gradient(${swatch(state.stores[0])} 0 50%, ${swatch(state.stores[1])} 0)`;
+  else dot.style.background = swatch(state.stores[0]);
   storeBtn.querySelector('.nm').textContent = s ? s.name : 'All stores';
   storeBtn.setAttribute('aria-label', `Store: ${s ? s.name : 'All stores'}`);
 }
@@ -61,21 +67,22 @@ async function render() {
   document.getElementById('dock-action')?.replaceChildren(); // the List fills this with its Finish pill
   drawPill(view);
   if (state.loadError) {
-    root.innerHTML = '<p class="empty"></p><button id="retry" class="btn-main" style="width:100%">Try again</button>';
-    root.querySelector('.empty').textContent = `${state.loadError} Your data is safe on the server.`;
-    document.getElementById('retry').addEventListener('click', async () => { await loadStores(); render(); });
+    root.replaceChildren(errorState({ title: VIEW_TITLES[view], message: state.loadError, onRetry: async () => { await loadStores(); render(); } }));
     return;
   }
   if (!state.stores.length) { renderFirstRun(); return; }
   try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open() }); }
-  catch (err) { if (stale()) return; root.innerHTML = ''; toast(err.message); }
+  catch (err) {
+    if (stale()) return;
+    root.replaceChildren(errorState({ title: VIEW_TITLES[view], message: err.message, onRetry: render }));
+  }
 }
 
 function renderFirstRun() {
   const steps = ['Add the things you always buy.', 'Tap the basket when one runs low. It goes on your list.', 'Snap the receipt so prices stay real.'];
   root.innerHTML = `<form class="first-run" id="first" novalidate>
     <h1 class="fr-title">Never forget a staple again</h1>
-    <ol class="fr-steps">${steps.map((t, i) => `<li><i>${i + 1}</i><span>${t}</span></li>`).join('')}</ol>
+    <ol class="fr-steps" role="list">${steps.map((t, i) => `<li><i>${i + 1}</i><span>${t}</span></li>`).join('')}</ol>
     <label class="fr-field"><span>Where do you shop most?</span>
       <input type="text" name="name" placeholder="e.g. Market Basket" autocomplete="off"></label>
     <p class="msg" role="alert" hidden></p>
@@ -86,8 +93,10 @@ function renderFirstRun() {
     e.preventDefault();
     const name = form.name.value.trim();
     if (!name) return;
+    const go = form.querySelector('.es-primary');
+    go.disabled = true;
     try { await api.createStore(name, true); await loadStores(); render(); }
-    catch (err) { const m = form.querySelector('.msg'); m.textContent = err.message; m.hidden = false; }
+    catch (err) { go.disabled = false; const m = form.querySelector('.msg'); m.textContent = err.message; m.hidden = false; }
   });
 }
 

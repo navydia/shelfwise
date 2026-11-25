@@ -31,7 +31,10 @@ export function emptyState({ icon: iconName, title, body, primary, secondary, ex
     i.innerHTML = icon(primary.icon);
     btn.append(i);
   }
-  btn.append(document.createTextNode(primary.label));
+  const label = document.createElement('span');
+  label.className = 'es-label';
+  label.textContent = primary.label;
+  btn.append(label);
   btn.addEventListener('click', () => primary.onClick());
   root.append(btn);
 
@@ -45,4 +48,26 @@ export function emptyState({ icon: iconName, title, body, primary, secondary, ex
   }
   if (extra) root.append(extra);
   return root;
+}
+
+// A failed load: the page title stays, the reason and reassurance sit under an icon, and one button tries again.
+// Returns a fragment holding the title and the state. No auto-dismiss: it stays until Try again works.
+export function errorState({ title, message, onRetry }) {
+  const frag = document.createDocumentFragment();
+  const h = document.createElement('h1');
+  h.className = 'title';
+  h.textContent = title;
+  const body = document.createElement('div');
+  const why = document.createElement('p');
+  why.textContent = message;
+  const safe = document.createElement('p');
+  safe.textContent = 'Your data is safe on the server.';
+  body.append(why, safe);
+  const es = emptyState({
+    icon: 'cloud-off', title: "Couldn't load this", body,
+    primary: { label: 'Try again', onClick: onRetry },
+  });
+  es.setAttribute('role', 'alert');
+  frag.append(h, es);
+  return frag;
 }

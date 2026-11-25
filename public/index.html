@@ -9,6 +9,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Shelfwise">
   <meta name="theme-color" content="#F2EEE6">
+  <link rel="preload" href="/fonts/figtree-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/figtree-700.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/bricolage-800.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/app.css">
@@ -20,7 +22,7 @@
   </header>
   <div id="offline" class="offline" hidden>Offline: showing saved data</div>
   <main id="view"></main>
-  <div class="dock">
+  <div class="dock" hidden>
     <nav class="tabs glass" id="tabs" aria-label="Sections"></nav>
     <div id="dock-action"></div>
   </div>

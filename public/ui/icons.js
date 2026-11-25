@@ -15,6 +15,7 @@ const PATHS = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   'search-x': '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M9 9l4 4M13 9l-4 4"/>',
   'filter-x': '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/><path d="M3 3l18 18"/>',
+  'cloud-off': '<path d="M7.5 18.5h9a3.5 3.5 0 0 0 .9-6.9A5.5 5.5 0 0 0 7.2 10 4.3 4.3 0 0 0 7.5 18.5z"/><path d="M3 3l18 18"/>',
   cart: '<path d="M3 4h2.5l2 11h10l2-8H7"/><circle cx="9" cy="19" r="1.3"/><circle cx="17" cy="19" r="1.3"/>',
   store: '<path d="M4 9.5l1.5-5h13l1.5 5"/><path d="M4 9.5a2.7 2.7 0 0 0 5.3 0 2.7 2.7 0 0 0 5.4 0 2.7 2.7 0 0 0 5.3 0"/><path d="M5.5 12.5V20h13v-7.5M10 20v-4.5h4V20"/>',
 };

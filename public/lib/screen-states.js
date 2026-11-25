@@ -13,10 +13,13 @@ export function listState(toGetCount, inCartCount) {
   return inCartCount > 0 ? 'allTicked' : 'empty';
 }
 
-export function pantryEmptyKind({ totalInScope, shown, query, activeFilters }) {
+// queryMatchesIgnoringFilters: how many staples in scope match the search text with the filters switched off.
+// A search is only "no match" when it finds nothing even then; otherwise a filter is hiding the match.
+export function pantryEmptyKind({ totalInScope, shown, query, queryMatchesIgnoringFilters = 0 }) {
   if (totalInScope === 0) return 'noStaples';
   if (shown !== 0) return null;
-  return String(query ?? '').trim() ? 'noSearchMatch' : 'noFilterMatch';
+  const searching = String(query ?? '').trim() !== '';
+  return searching && queryMatchesIgnoringFilters === 0 ? 'noSearchMatch' : 'noFilterMatch';
 }
 
 export function describeFilters(opts, categories) {

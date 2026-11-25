@@ -38,7 +38,7 @@ function loadGroup(storeId) {
 function openGroupSheet(cur, onChange) {
   const g = { ...cur };
   const body = el('div', 'filter-form');
-  const grp = el('div', 'grp');
+  const grp = el('div', 'fgrp');
   grp.append(el('div', 'field-label', 'Group by'));
   const opts = el('div', 'opts');
   const btns = BY.map(([k, label]) => {
@@ -122,12 +122,14 @@ export async function renderList(root, ctx) {
     e.preventDefault();
     const name = form.elements.name.value.trim();
     if (!name) return;
+    const go = form.querySelector('.add-go');
+    go.disabled = true;
     try {
       const existing = (await api.getItems(storeId)).find((i) => i.name.toLowerCase() === name.toLowerCase());
       const item = existing ?? (await api.createItem({ name, storeId }));
       await api.patchItem(item.id, { onList: true });
       redraw();
-    } catch (err) { toast(err.message); }
+    } catch (err) { go.disabled = false; toast(err.message); }
   });
 
   function rowFor(l, ticked) {
@@ -191,12 +193,15 @@ export async function renderList(root, ctx) {
       sections.append(es, addBox);
     }
     const groups = groupList(lines, group.by, categories, ticked, group.tickedToBottom);
+    // The add row goes under the last group that still has things to get, not under the cart group.
+    let addAt = groups.length - 1;
+    for (let k = groups.length - 1; k >= 0; k--) { if (groups[k].key !== 'cart') { addAt = k; break; } }
     groups.forEach((g, i) => {
       const sec = el('section', 'sec');
       if (g.title) { const h = el('h2', 'ghd'); h.append(el('span', 'lab', g.title), el('span', 'ct', String(g.items.length))); sec.append(h); }
       const card = el('div', 'grp');
       for (const l of g.items) card.append(rowFor(l, ticked.has(l.id)));
-      if (st === 'normal' && i === groups.length - 1) card.append(addBox);
+      if (st === 'normal' && i === addAt) card.append(addBox);
       sec.append(card);
       sections.append(sec);
     });

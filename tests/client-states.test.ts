@@ -13,8 +13,11 @@ describe('screen states', () => {
     expect(listState(2, 0)).toBe('normal');
     expect(listState(2, 3)).toBe('normal');
   });
+  it('search_with_hidden_match_shows_filter_state', () => {
+    expect(pantryEmptyKind({ totalInScope: 5, shown: 0, query: 'oat', activeFilters: 2, queryMatchesIgnoringFilters: 1 })).toBe('noFilterMatch');
+  });
   it('pantryEmptyKind_search_beats_filters', () => {
-    expect(pantryEmptyKind({ totalInScope: 5, shown: 0, query: 'oat', activeFilters: 2 })).toBe('noSearchMatch');
+    expect(pantryEmptyKind({ totalInScope: 5, shown: 0, query: 'oat', activeFilters: 2, queryMatchesIgnoringFilters: 0 })).toBe('noSearchMatch');
     expect(pantryEmptyKind({ totalInScope: 0, shown: 0, query: '', activeFilters: 0 })).toBe('noStaples');
     expect(pantryEmptyKind({ totalInScope: 5, shown: 0, query: '  ', activeFilters: 1 })).toBe('noFilterMatch');
     expect(pantryEmptyKind({ totalInScope: 5, shown: 2, query: 'oat', activeFilters: 1 })).toBeNull();
