@@ -1,3 +1,5 @@
+import { createTrips } from './lib/trip.js';
+
 const offlineListeners = new Set();
 export const onOffline = (fn) => offlineListeners.add(fn);
 const flagOffline = (on) => offlineListeners.forEach((fn) => fn(on));
@@ -22,16 +24,37 @@ async function request(method, url, body, isForm = false) {
   return res.status === 204 ? null : res.json();
 }
 
-export const getStores = () => request('GET', '/api/stores');
-export const createStore = (name, isMain = false) => request('POST', '/api/stores', { name, isMain });
+let knownStoreIds = [];
+export const getStores = async () => {
+  const stores = await request('GET', '/api/stores');
+  knownStoreIds = stores.map((s) => s.id);
+  return stores;
+};
+export const createStore = (name, isMain = false, color = 'fig') => request('POST', '/api/stores', { name, isMain, color });
+export const updateStore = (id, patch) => request('PATCH', `/api/stores/${id}`, patch);
+export const deleteStore = (id) => request('DELETE', `/api/stores/${id}`);
+export const getCategories = () => request('GET', '/api/categories');
+export const createCategory = (name) => request('POST', '/api/categories', { name });
+export const finishTrip = (storeId, itemIds) => request('POST', `/api/stores/${storeId}/finish`, { itemIds });
 export const getItems = (storeId) => request('GET', `/api/items?storeId=${storeId}`);
 export const createItem = (body) => request('POST', '/api/items', body);
+
+export const store = {
+  get(key, fallback) { try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch { return fallback; } },
+  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable: ignore */ } },
+  remove(key) { try { localStorage.removeItem(key); } catch { /* storage unavailable: ignore */ } },
+};
+
+// Ticks for the current shopping trip live on this phone, per store.
+export const trips = createTrips(store);
+
 export const patchItem = async (id, patch) => {
   const item = await request('PATCH', `/api/items/${id}`, patch);
-  if (patch.state !== undefined) uncheck([id]); // a new stock state starts a fresh shopping round
+  // Off the list, or moved to another store: its tick no longer means anything.
+  if (patch.onList === false || patch.storeId !== undefined) trips.remove([id], knownStoreIds);
   return item;
 };
-export const deleteItem = (id) => request('DELETE', `/api/items/${id}`).then(() => uncheck([id]));
+export const deleteItem = (id) => request('DELETE', `/api/items/${id}`).then(() => trips.remove([id], knownStoreIds));
 export const uploadItemPhoto = (id, file) => {
   const f = new FormData(); f.append('photo', file);
   return request('POST', `/api/items/${id}/photo`, f, true);
@@ -44,20 +67,6 @@ export const uploadReceipt = (storeId, file) => {
 };
 export const confirmReceipt = async (id, matches) => {
   const res = await request('POST', `/api/receipts/${id}/confirm`, { matches });
-  uncheck(matches.filter((m) => m.itemId != null).map((m) => m.itemId)); // bought: next list starts unchecked
+  trips.remove(matches.filter((m) => m.itemId != null).map((m) => m.itemId), knownStoreIds); // bought: next trip starts unticked
   return res;
 };
-
-export const fmt = (cents) => `$${Math.floor(cents / 100)}.${String(cents % 100).padStart(2, '0')}`;
-export const store = {
-  get(key, fallback) { try { const v = localStorage.getItem(key); return v === null ? fallback : JSON.parse(v); } catch { return fallback; } },
-  set(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* storage unavailable: ignore */ } },
-};
-
-// Check-off marks are remembered per phone as a set of item ids.
-export const CHECKED_KEY = 'sw-checked';
-export function uncheck(ids) {
-  const cur = new Set(store.get(CHECKED_KEY, []));
-  ids.forEach((i) => cur.delete(i));
-  store.set(CHECKED_KEY, [...cur]);
-}

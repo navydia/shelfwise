@@ -41,21 +41,34 @@ describe('receipts API', () => {
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({ readable: false, lines: [] });
   });
-  it('confirm_updates_price_alias_and_state', async () => {
-    const { upload, api, db, bananas, eggs } = await setup();
-    await api.patch(`/api/items/${eggs.id}`).send({ state: 'out' });
-    const up = (await upload()).body;
-    const lineOf = (raw: string) => up.lines.find((l: { raw: string }) => l.raw === raw).id;
-    const res = await api.post(`/api/receipts/${up.id}/confirm`).send({
-      matches: [{ lineId: lineOf('ORG BNNA 1.29'), itemId: bananas.id }, { lineId: lineOf('EGGS 3.99'), itemId: eggs.id }],
-    });
-    expect(res.status).toBe(200);
-    const items = (await api.get('/api/items')).body as { id: number; lastPriceCents: number; state: string }[];
-    expect(items.find((i) => i.id === bananas.id)!.lastPriceCents).toBe(129);
-    const e = items.find((i) => i.id === eggs.id)!;
-    expect(e.lastPriceCents).toBe(399);
-    expect(e.state).toBe('stocked');
-    expect(db.prepare('select label from aliases where item_id = ?').get(bananas.id)).toEqual({ label: 'org bnna' });
+  it('confirm_updates_price_source_and_takes_off_list', async () => {
+    let text = 'EGGS 3.99';
+    const { upload, api, db, eggs, store } = await setup(() => text);
+    const itemFrom = async () => (await api.get(`/api/items?storeId=${store.id}`)).body.find((i: { id: number }) => i.id === eggs.id);
+    await api.patch(`/api/items/${eggs.id}`).send({ onList: true });
+
+    const first = (await upload()).body;
+    const firstLine = first.lines.find((l: { raw: string }) => l.raw === 'EGGS 3.99');
+    await api.post(`/api/receipts/${first.id}/confirm`).send({ matches: [{ lineId: firstLine.id, itemId: eggs.id }] });
+    const firstAt = (db.prepare('select created_at from receipts where id = ?').get(first.id) as { created_at: string }).created_at;
+    expect(await itemFrom()).toMatchObject({ lastPriceCents: 399, priceSource: 'receipt', priceDate: firstAt, onList: false });
+    const row = () => db.prepare('select price_receipt_id, changed_at from items where id = ?').get(eggs.id) as { price_receipt_id: number; changed_at: string };
+    const afterFirst = row();
+    expect(afterFirst.price_receipt_id).toBe(first.id);
+
+    await api.patch(`/api/items/${eggs.id}`).send({ lastPriceCents: 500 });
+    expect(await itemFrom()).toMatchObject({ lastPriceCents: 500, priceSource: 'manual' });
+
+    text = 'EGGS 4.25';
+    await api.patch(`/api/items/${eggs.id}`).send({ onList: true });
+    const second = (await upload()).body;
+    const secondLine = second.lines.find((l: { raw: string }) => l.raw === 'EGGS 4.25');
+    await api.post(`/api/receipts/${second.id}/confirm`).send({ matches: [{ lineId: secondLine.id, itemId: eggs.id }] });
+    const secondAt = (db.prepare('select created_at from receipts where id = ?').get(second.id) as { created_at: string }).created_at;
+    expect(await itemFrom()).toMatchObject({ lastPriceCents: 425, priceSource: 'receipt', priceDate: secondAt, onList: false });
+    const afterSecond = row();
+    expect(afterSecond.price_receipt_id).toBe(second.id);
+    expect(afterSecond.changed_at).not.toBe(afterFirst.changed_at);
   });
   it('unmatched_lines_change_nothing', async () => {
     const { upload, api, db } = await setup();

@@ -59,7 +59,7 @@ export function receiptsRouter(db: Db, dataDir: string, ocr: Ocr = defaultOcr): 
 
   r.post('/:id/confirm', (req, res) => {
     const receipt = db.prepare('select * from receipts where id = ?').get(Number(req.params.id)) as
-      | { id: number; store_id: number; status: string } | undefined;
+      | { id: number; store_id: number; status: string; created_at: string } | undefined;
     if (!receipt) return res.status(404).json({ error: 'not found' });
     if (receipt.status === 'confirmed') return res.status(409).json({ error: 'already confirmed' });
     const matches = Array.isArray(req.body?.matches) ? (req.body.matches as { lineId: number; itemId: number | null }[]) : [];
@@ -78,7 +78,8 @@ export function receiptsRouter(db: Db, dataDir: string, ocr: Ocr = defaultOcr): 
       for (const m of matches) {
         if (m.itemId === null || m.itemId === undefined) continue;
         const line = lineStmt.get(m.lineId, receipt.id) as { raw_text: string; price_cents: number };
-        db.prepare("update items set last_price_cents = ?, state = 'stocked', on_list = 0 where id = ?").run(line.price_cents, m.itemId);
+        db.prepare("update items set last_price_cents = ?, price_source = 'receipt', price_receipt_id = ?, price_updated_at = ?, on_list = 0, changed_at = ? where id = ?")
+          .run(line.price_cents, receipt.id, receipt.created_at, new Date().toISOString(), m.itemId);
         db.prepare('update receipt_lines set item_id = ? where id = ?').run(m.itemId, m.lineId);
         const label = normalizeLabel(line.raw_text);
         if (label) db.prepare('insert or ignore into aliases(item_id, label) values (?, ?)').run(m.itemId, label);

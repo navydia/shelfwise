@@ -8,26 +8,28 @@
   <link rel="apple-touch-icon" href="/icon-180.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Shelfwise">
-  <meta name="theme-color" content="#f6f1e7">
+  <meta name="theme-color" content="#F2EEE6">
+  <link rel="preload" href="/fonts/figtree-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/figtree-700.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/bricolage-800.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/tokens.css">
   <link rel="stylesheet" href="/app.css">
 </head>
 <body>
   <header class="top">
-    <h1 class="brand">Shelfwise</h1>
-    <div class="store-switch">
-      <select id="store" aria-label="Store"></select>
-      <button id="add-store" class="icon-btn" aria-label="Add store">+</button>
-    </div>
+    <div id="wordmark"></div>
+    <button id="store-btn" class="store-pill" type="button" aria-label="Store" hidden></button>
   </header>
   <div id="offline" class="offline" hidden>Offline: showing saved data</div>
   <main id="view"></main>
-  <button id="quick-flag" class="fab" hidden>Running low</button>
-  <nav class="tabs" aria-label="Sections">
-    <a href="#/review" data-tab="review">Review</a>
-    <a href="#/list" data-tab="list">List</a>
-    <a href="#/receipt" data-tab="receipt">Receipt</a>
-  </nav>
-  <dialog id="dialog"></dialog>
+  <div class="dock" hidden>
+    <nav class="tabs glass" id="tabs" aria-label="Sections"></nav>
+    <div id="dock-action"></div>
+  </div>
+  <script type="module">
+    import { wordmarkHtml } from '/ui/wordmark.js';
+    document.getElementById('wordmark').innerHTML = wordmarkHtml(24);
+  </script>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

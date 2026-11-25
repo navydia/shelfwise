@@ -12,7 +12,8 @@ describe('stores and items API', () => {
     const { api, store } = await setup();
     const res = await api.post('/api/items').send({ name: 'Olive oil', storeId: store.id });
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({ name: 'Olive oil', storeId: store.id, state: 'stocked', usualQty: 1, lastPriceCents: null, onList: false, photo: null });
+    expect(res.body).toMatchObject({ name: 'Olive oil', storeId: store.id, usualQty: 1, lastPriceCents: null, onList: false, photo: null, priceSource: null, priceDate: null, categoryId: null, aisle: null });
+    expect(res.body.state).toBeUndefined();
     const list = await api.get(`/api/items?storeId=${store.id}`);
     expect(list.body).toHaveLength(1);
     expect((await api.get('/api/stores')).body).toHaveLength(1);
@@ -27,17 +28,57 @@ describe('stores and items API', () => {
     const { api, store } = await setup();
     expect((await api.post('/api/items').send({ name: '   ', storeId: store.id })).status).toBe(400);
   });
-  it('patch_state_to_low', async () => {
-    const { api, store } = await setup();
-    const { body } = await api.post('/api/items').send({ name: 'Eggs', storeId: store.id });
-    const res = await api.patch(`/api/items/${body.id}`).send({ state: 'low' });
+  const mkItem = async (extra: object = {}) => {
+    const { api, store, db } = await setup();
+    const { body } = await api.post('/api/items').send({ name: 'Eggs', storeId: store.id, ...extra });
+    return { api, store, db, id: body.id as number };
+  };
+  it('patch_on_list_true', async () => {
+    const { api, id } = await mkItem();
+    const res = await api.patch(`/api/items/${id}`).send({ onList: true });
     expect(res.status).toBe(200);
-    expect(res.body.state).toBe('low');
+    expect(res.body.onList).toBe(true);
   });
-  it('patch_invalid_state_returns_400', async () => {
-    const { api, store } = await setup();
-    const { body } = await api.post('/api/items').send({ name: 'Eggs', storeId: store.id });
-    expect((await api.patch(`/api/items/${body.id}`).send({ state: 'empty' })).status).toBe(400);
+  it('manual_price_sets_source_and_date', async () => {
+    const { api, id } = await mkItem();
+    const res = await api.patch(`/api/items/${id}`).send({ lastPriceCents: 1199 });
+    expect(res.body).toMatchObject({ lastPriceCents: 1199, priceSource: 'manual' });
+    expect(Math.abs(Date.now() - Date.parse(res.body.priceDate))).toBeLessThan(5000);
+  });
+  it('clearing_price_clears_source', async () => {
+    const { api, id } = await mkItem();
+    await api.patch(`/api/items/${id}`).send({ lastPriceCents: 500 });
+    const res = await api.patch(`/api/items/${id}`).send({ lastPriceCents: null });
+    expect(res.body).toMatchObject({ lastPriceCents: null, priceSource: null, priceDate: null });
+  });
+  it('unknown_category_returns_400', async () => {
+    const { api, id } = await mkItem();
+    expect((await api.patch(`/api/items/${id}`).send({ categoryId: 9999 })).status).toBe(400);
+    const ok = await api.patch(`/api/items/${id}`).send({ categoryId: 1 });
+    expect(ok.body.categoryId).toBe(1);
+    expect((await api.patch(`/api/items/${id}`).send({ categoryId: null })).body.categoryId).toBeNull();
+  });
+  it('aisle_trimmed_blank_becomes_null_and_too_long_rejected', async () => {
+    const { api, id } = await mkItem();
+    expect((await api.patch(`/api/items/${id}`).send({ aisle: '  4 ' })).body.aisle).toBe('4');
+    expect((await api.patch(`/api/items/${id}`).send({ aisle: '' })).body.aisle).toBeNull();
+    expect((await api.patch(`/api/items/${id}`).send({ aisle: 'x'.repeat(21) })).status).toBe(400);
+  });
+  it('moving_store_clears_aisle', async () => {
+    const { api, id } = await mkItem();
+    const other = (await api.post('/api/stores').send({ name: 'Deli' })).body;
+    await api.patch(`/api/items/${id}`).send({ aisle: '7' });
+    expect((await api.patch(`/api/items/${id}`).send({ storeId: other.id })).body.aisle).toBeNull();
+    await api.patch(`/api/items/${id}`).send({ aisle: '7' });
+    expect((await api.patch(`/api/items/${id}`).send({ storeId: other.id, aisle: '2' })).body.aisle).toBe('2');
+  });
+  it('changed_at_updates_on_patch', async () => {
+    const { api, id } = await mkItem();
+    const before = (await api.get('/api/items')).body[0].changedAt as string;
+    expect(Number.isNaN(Date.parse(before))).toBe(false);
+    await new Promise((r) => setTimeout(r, 5));
+    const res = await api.patch(`/api/items/${id}`).send({ onList: true });
+    expect(res.body.changedAt > before).toBe(true);
   });
   it('only_one_main_store', async () => {
     const { api } = await setup();

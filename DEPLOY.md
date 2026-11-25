@@ -101,3 +101,22 @@ rm -f /var/lib/shelfwise/shelfwise.db-wal /var/lib/shelfwise/shelfwise.db-shm
 tar -xzf shelfwise-YYYY-MM-DD.tar.gz -C /var/lib/shelfwise
 sudo systemctl start shelfwise
 ```
+
+## Upgrading
+
+Back up first and note the commit you are running, then pull the new version and restart:
+
+```sh
+./scripts/backup.sh /path/to/backups
+git rev-parse HEAD   # write this down; you need it to roll back
+git pull && npm ci
+sudo systemctl restart shelfwise
+```
+
+If you run it with pm2 instead of systemd, use the same backup and `git rev-parse HEAD` steps, then `npm run update` and `pm2 restart shelfwise`. Take the backup **before** `npm run update`: pm2 restarts the app as soon as the new code lands, and that first start is when the database is upgraded.
+
+The first start after upgrading migrates the database automatically, and you don't need to do anything. Staples that were marked **Low** or **Out** are now "on the list", so your shopping list looks the same as before. Ticks you made in the store before the upgrade are cleared, so you'll start with nothing ticked. 
+
+### Rolling back
+
+If something looks wrong, roll back the code and the data together. Stop the app, check out the commit you noted before upgrading (`git checkout <that commit>`), run `npm ci`, restore the backup as described above, then start the app again. Restoring the backup alone while still running the new code would not help: the new code would simply migrate the restored data again on its next start.

@@ -15,9 +15,9 @@ async function setup() {
 describe('GET /api/stores/:id/list', () => {
   it('list_contains_only_that_stores_low_and_out_items', async () => {
     const { api, a, b, mk } = await setup();
-    await mk('Rice', a.id, { state: 'low', lastPriceCents: 300 });
+    await mk('Rice', a.id, { onList: true, lastPriceCents: 300 });
     await mk('Salt', a.id, {});
-    await mk('Olives', b.id, { state: 'out', lastPriceCents: 500 });
+    await mk('Olives', b.id, { onList: true, lastPriceCents: 500 });
     const res = await api.get(`/api/stores/${a.id}/list`);
     expect(res.status).toBe(200);
     expect(res.body.lines.map((l: { name: string }) => l.name)).toEqual(['Rice']);
@@ -25,7 +25,7 @@ describe('GET /api/stores/:id/list', () => {
   });
   it('list_applies_budget_status', async () => {
     const { api, a, mk } = await setup();
-    await mk('Rice', a.id, { state: 'low', lastPriceCents: 6000 });
+    await mk('Rice', a.id, { onList: true, lastPriceCents: 6000 });
     const res = await api.get(`/api/stores/${a.id}/list?budget=50`);
     expect(res.body).toMatchObject({ subtotalCents: 6000, budgetCents: 5000, status: 'over' });
   });
@@ -38,5 +38,29 @@ describe('GET /api/stores/:id/list', () => {
   it('unknown_store_404', async () => {
     const { api } = await setup();
     expect((await api.get('/api/stores/999/list')).status).toBe(404);
+  });
+});
+
+describe('POST /api/stores/:id/finish', () => {
+  it('finish_takes_items_off_list', async () => {
+    const { api, a, mk } = await setup();
+    const rice = await mk('Rice', a.id, { onList: true, lastPriceCents: 300 });
+    const salt = await mk('Salt', a.id, { onList: true, lastPriceCents: 100 });
+    const res = await api.post(`/api/stores/${a.id}/finish`).send({ itemIds: [rice.id] });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ finished: 1 });
+    const list = (await api.get(`/api/stores/${a.id}/list`)).body;
+    expect(list.lines.map((l: { name: string }) => l.name)).toEqual([salt.name]);
+    expect((await api.post(`/api/stores/${a.id}/finish`).send({ itemIds: [] })).body).toEqual({ finished: 0 });
+  });
+  it('finish_rejects_items_from_other_store', async () => {
+    const { api, a, b, mk } = await setup();
+    const rice = await mk('Rice', a.id, { onList: true, lastPriceCents: 300 });
+    const olives = await mk('Olives', b.id, { onList: true });
+    const res = await api.post(`/api/stores/${a.id}/finish`).send({ itemIds: [rice.id, olives.id] });
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('item is not in this store');
+    const list = (await api.get(`/api/stores/${a.id}/list`)).body;
+    expect(list.lines.map((l: { name: string }) => l.name)).toEqual(['Rice']);
   });
 });

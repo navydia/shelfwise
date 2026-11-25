@@ -1,13 +1,12 @@
-export type ItemState = 'stocked' | 'low' | 'out';
-
 export type ListItem = {
   id: number;
   name: string;
   photo: string | null;
-  state: ItemState;
   usualQty: number;
   lastPriceCents: number | null;
   onList: boolean;
+  categoryId: number | null;
+  aisle: string | null;
 };
 
 export type ListLine = ListItem & { lineCents: number | null };
@@ -20,7 +19,7 @@ export type ListResult = {
 };
 
 export function buildList(items: ListItem[], budgetCents: number | null): ListResult {
-  const onList = items.filter((i) => i.state !== 'stocked' || i.onList);
+  const onList = items.filter((i) => i.onList);
   const lines: ListLine[] = [];
   const unpriced: ListLine[] = [];
   let subtotalCents = 0;

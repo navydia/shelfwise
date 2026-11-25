@@ -1,12 +1,20 @@
 import * as api from './api.js';
-import { renderReview } from './views/review.js';
+import { mountTabBar } from './ui/tabbar.js';
+import { mountStorePicker } from './ui/store-picker.js';
+import { openStoreSheet } from './views/store-sheet.js';
+import { renderSettings } from './views/settings.js';
+import { renderPantry, pantryHooks } from './views/pantry.js';
 import { renderList } from './views/list.js';
 import { renderReceipt } from './views/receipt.js';
+import { finishForStore } from './views/finish-sheet.js';
+import { errorState } from './ui/empty-state.js';
 
 const root = document.getElementById('view');
-const select = document.getElementById('store');
 const offlineBar = document.getElementById('offline');
-const state = { stores: [], storeId: null, loadError: null };
+const storeBtn = document.getElementById('store-btn');
+const PANTRY_KEY = 'sw-pantry-store'; // a store id, or null for All stores
+const STORE_KEY = 'sw-store'; // List and Receipt: always a store
+const state = { stores: [], pantryStoreId: null, storeId: null, loadError: null };
 
 api.onOffline((on) => { offlineBar.hidden = !on; });
 
@@ -17,84 +25,115 @@ export function toast(message) {
   setTimeout(() => el.remove(), 5000);
 }
 
-const VIEWS = { review: renderReview, list: renderList, receipt: renderReceipt };
+const VIEW_TITLES = { pantry: 'Pantry', list: 'List', receipt: 'Receipt', settings: 'Settings' };
+const VIEWS = { pantry: renderPantry, list: renderList, receipt: renderReceipt, settings: renderSettings };
 
 function route() {
-  const [, view = 'review'] = location.hash.split('/');
-  return VIEWS[view] ? view : 'review';
+  const [, view = 'pantry'] = location.hash.split('/');
+  if (view === 'review') { location.replace('#/pantry'); return 'pantry'; }
+  return VIEWS[view] ? view : 'pantry';
 }
 
+const mainStore = () => state.stores.find((s) => s.isMain) ?? state.stores[0] ?? null;
+const storeById = (id) => state.stores.find((s) => s.id === id) ?? null;
+
+const dock = document.querySelector('.dock');
+
+function drawPill(view) {
+  dock.hidden = state.stores.length === 0 && !state.loadError; // first run: no tab bar until a store exists
+  const showPill = state.stores.length > 0 && view !== 'settings';
+  storeBtn.hidden = !showPill;
+  if (!showPill) return;
+  const s = view === 'pantry' ? storeById(state.pantryStoreId) : storeById(state.storeId);
+  storeBtn.innerHTML = '<i class="dot"></i><span class="nm"></span><span class="caret"></span>';
+  const dot = storeBtn.querySelector('.dot');
+  // All stores: the first two stores' colours side by side (one store: just its colour).
+  const swatch = (c) => `var(--store-${c.color})`;
+  if (s) dot.style.background = swatch(s);
+  else if (state.stores.length > 1) dot.style.background = `conic-gradient(${swatch(state.stores[0])} 0 50%, ${swatch(state.stores[1])} 0)`;
+  else dot.style.background = swatch(state.stores[0]);
+  storeBtn.querySelector('.nm').textContent = s ? s.name : 'All stores';
+  storeBtn.setAttribute('aria-label', `Store: ${s ? s.name : 'All stores'}`);
+}
+
+// Each render gets a number. A view whose async work finishes after a newer render has started
+// checks ctx.stale() and does nothing, so it can't write into the page or the dock.
+let renderSeq = 0;
+
 async function render() {
+  const seq = ++renderSeq;
+  const stale = () => seq !== renderSeq;
   const view = route();
-  document.querySelectorAll('.tabs a').forEach((a) => {
-    if (a.dataset.tab === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-  });
+  document.getElementById('dock-action')?.replaceChildren(); // the List fills this with its Finish pill
+  drawPill(view);
   if (state.loadError) {
-    root.innerHTML = '<p class="empty"></p><button id="retry" style="width:100%">Try again</button>';
-    root.querySelector('.empty').textContent = `${state.loadError} Your data is safe on the server.`;
-    document.getElementById('retry').addEventListener('click', async () => { await loadStores(); render(); });
+    root.replaceChildren(errorState({ title: VIEW_TITLES[view], message: state.loadError, onRetry: async () => { await loadStores(); render(); } }));
     return;
   }
-  if (!state.stores.length) {
-    root.innerHTML = '<form class="add" id="first"><input type="text" name="name" placeholder="Name your main store" aria-label="Main store name"><button>Create</button></form><p class="empty">Start by naming the store you shop at most.</p>';
-    document.getElementById('first').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const name = e.target.name.value.trim();
-      if (!name) return;
-      try { await api.createStore(name, true); await loadStores(); render(); } catch (err) { toast(err.message); }
-    });
-    return;
+  if (!state.stores.length) { renderFirstRun(); return; }
+  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open() }); }
+  catch (err) {
+    if (stale()) return;
+    root.replaceChildren(errorState({ title: VIEW_TITLES[view], message: err.message, onRetry: render }));
   }
-  syncFlag();
-  try { await VIEWS[view](root, { storeId: state.storeId, toast, state }); }
-  catch (err) { root.innerHTML = ''; toast(err.message); }
+}
+
+function renderFirstRun() {
+  const steps = ['Add the things you always buy.', 'Tap the basket when one runs low. It goes on your list.', 'Snap the receipt so prices stay real.'];
+  root.innerHTML = `<form class="first-run" id="first" novalidate>
+    <h1 class="fr-title">Never forget a staple again</h1>
+    <ol class="fr-steps" role="list">${steps.map((t, i) => `<li><i>${i + 1}</i><span>${t}</span></li>`).join('')}</ol>
+    <label class="fr-field"><span>Where do you shop most?</span>
+      <input type="text" name="name" placeholder="e.g. Market Basket" autocomplete="off"></label>
+    <p class="msg" role="alert" hidden></p>
+    <button class="es-primary" type="submit">Get started</button>
+  </form>`;
+  const form = root.querySelector('#first');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = form.name.value.trim();
+    if (!name) return;
+    const go = form.querySelector('.es-primary');
+    go.disabled = true;
+    try { await api.createStore(name, true); await loadStores(); render(); }
+    catch (err) { go.disabled = false; const m = form.querySelector('.msg'); m.textContent = err.message; m.hidden = false; }
+  });
 }
 
 async function loadStores() {
   try { state.stores = await api.getStores(); state.loadError = null; }
   catch (err) { state.stores = []; state.loadError = "Can't reach Shelfwise right now. Check that Tailscale is on."; }
-  if (!state.stores.some((s) => s.id === state.storeId)) state.storeId = state.stores[0]?.id ?? null;
-  select.innerHTML = '';
-  for (const s of state.stores) select.append(new Option(s.name, s.id, false, s.id === state.storeId));
+  const pantry = api.store.get(PANTRY_KEY, null);
+  state.pantryStoreId = state.stores.some((s) => s.id === pantry) ? pantry : null;
+  const saved = api.store.get(STORE_KEY, null);
+  state.storeId = state.stores.some((s) => s.id === saved) ? saved : (mainStore()?.id ?? null);
 }
 
-select.addEventListener('change', () => { state.storeId = Number(select.value); render(); });
-document.getElementById('add-store').addEventListener('click', async () => {
-  const name = window.prompt('New store name');
-  if (!name || !name.trim()) return;
-  try { const s = await api.createStore(name.trim()); state.storeId = s.id; await loadStores(); render(); }
-  catch (err) { toast(err.message); }
+function pickStore(id) {
+  if (route() === 'pantry') { state.pantryStoreId = id; api.store.set(PANTRY_KEY, id); }
+  else if (id != null) { state.storeId = id; api.store.set(STORE_KEY, id); }
+  render();
+}
+
+async function reloadAfterEdit(select) {
+  await loadStores();
+  if (select != null) pickStore(select); else render();
+}
+
+pantryHooks.finishTrip = (id, { redraw }) => finishForStore(storeById(id), { toast, onDone: redraw });
+
+const storePicker = mountStorePicker(storeBtn, {
+  getStores: () => state.stores,
+  current: () => (route() === 'pantry' ? state.pantryStoreId : state.storeId),
+  allowAll: () => route() === 'pantry',
+  onPick: pickStore,
+  onEdit: (s) => openStoreSheet(s, { onSaved: () => reloadAfterEdit(), onDeleted: () => reloadAfterEdit() }),
+  onAdd: () => openStoreSheet(null, { onSaved: (s) => reloadAfterEdit(s.id) }),
 });
+
+mountTabBar(document.getElementById('tabs'), window);
 window.addEventListener('hashchange', render);
-
-const flagBtn = document.getElementById('quick-flag');
-const dialog = document.getElementById('dialog');
-flagBtn.addEventListener('click', async () => {
-  let items;
-  try { items = (await api.getItems(state.storeId)).filter((i) => i.state === 'stocked'); } catch (err) { toast(err.message); return; }
-  dialog.innerHTML = '<form method="dialog"><input type="search" placeholder="Which one is running low?" aria-label="Search items" autocomplete="off"><ul></ul><button class="ghost" value="close" style="margin-top:8px">Cancel</button></form>';
-  const ul = dialog.querySelector('ul');
-  const search = dialog.querySelector('input');
-  const draw = () => {
-    ul.innerHTML = '';
-    const q = search.value.trim().toLowerCase();
-    for (const i of items.filter((x) => x.name.toLowerCase().includes(q))) {
-      const li = document.createElement('li');
-      const b = document.createElement('button');
-      b.type = 'button'; b.textContent = i.name;
-      b.addEventListener('click', async () => {
-        try { await api.patchItem(i.id, { state: 'low' }); dialog.close(); if (route() !== 'receipt') await render(); toast(`${i.name} marked Low`); }
-        catch (err) { dialog.close(); toast(err.message); }
-      });
-      li.append(b); ul.append(li);
-    }
-    if (!ul.children.length) ul.innerHTML = '<li class="sub" style="padding:10px">Nothing matches.</li>';
-  };
-  search.addEventListener('input', draw); draw();
-  dialog.showModal();
-});
-
-function syncFlag() { flagBtn.hidden = !state.stores.length; }
+api.trips.dropLegacy(); // the old single "sw-checked" list is replaced by per-store trips
 
 await loadStores();
 render();
@@ -114,6 +153,8 @@ async function warmCache() {
     } catch { /* continue without the worker */ }
   }
   api.getStores().catch(() => {});
+  api.getCategories().catch(() => {});
+  api.getItems('all').catch(() => {});
   for (const s of state.stores) {
     api.getItems(s.id).catch(() => {});
     api.getList(s.id, api.store.get(`sw-budget-${s.id}`, '')).catch(() => {});

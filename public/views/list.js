@@ -1,86 +1,222 @@
 import * as api from '../api.js';
+import { renderTripCards } from '../ui/trip-cards.js';
+import { openSheet } from '../ui/sheet.js';
+import { budgetTag } from '../lib/budget-tag.js';
+import { groupList } from '../lib/list-groups.js';
+import { listMeta, listState } from '../lib/screen-states.js';
+import { emptyState } from '../ui/empty-state.js';
+import { skeletonRows } from '../ui/skeleton.js';
+import { icon } from '../ui/icons.js';
+import { fmt, priceParts } from '../lib/money.js';
+import { openBudgetSheet, budgetKey } from './budget-sheet.js';
+import { finishForStore } from './finish-sheet.js';
 
-export async function renderList(root, { storeId, toast }) {
-  const budgetKey = `sw-budget-${storeId}`;
-  const budget = api.store.get(budgetKey, '');
-  const [data, storeItems] = await Promise.all([api.getList(storeId, budget), api.getItems(storeId)]);
-  const onList = new Set([...data.lines, ...data.unpriced].map((l) => l.id));
-  const checked = new Set(api.store.get(api.CHECKED_KEY, []));
-  // Drop marks for items of this store that are no longer on its list.
-  const storeIds = new Set(storeItems.map((i) => i.id));
-  for (const id of [...checked]) if (storeIds.has(id) && !onList.has(id)) checked.delete(id);
-  api.store.set(api.CHECKED_KEY, [...checked]);
-  const redraw = () => renderList(root, { storeId, toast });
+const BY = [['aisle', 'Aisle'], ['category', 'Category'], ['none', 'None']];
+const BY_LABEL = { aisle: 'By aisle', category: 'By category', none: 'No grouping' };
+const groupKey = (storeId) => `sw-group-${storeId}`;
+
+function el(tag, className, text) {
+  const n = document.createElement(tag);
+  if (className) n.className = className;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+
+// Shelf-tag price: small $, big whole dollars, raised cents.
+function priceEl(cents) {
+  const { dollars, cents: c } = priceParts(cents);
+  const p = el('span', 'price');
+  p.append(el('span', 'd', '$'), dollars, el('sup', '', c));
+  return p;
+}
+
+function loadGroup(storeId) {
+  const v = api.store.get(groupKey(storeId), {}) ?? {};
+  return { by: BY.some(([k]) => k === v.by) ? v.by : 'aisle', tickedToBottom: v.tickedToBottom !== false };
+}
+
+function openGroupSheet(cur, onChange) {
+  const g = { ...cur };
+  const body = el('div', 'filter-form');
+  const grp = el('div', 'fgrp');
+  grp.append(el('div', 'field-label', 'Group by'));
+  const opts = el('div', 'opts');
+  const btns = BY.map(([k, label]) => {
+    const b = el('button', 'opt', label); b.type = 'button'; b.dataset.value = k;
+    b.addEventListener('click', () => { g.by = k; paint(); onChange({ ...g }); });
+    opts.append(b);
+    return b;
+  });
+  grp.append(opts);
+  const tog = el('div', 'tog');
+  const label = el('span', '', 'Move ticked items to the bottom'); label.id = 'tb-label';
+  const sw = el('button', 'switch'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-labelledby', 'tb-label');
+  sw.addEventListener('click', () => { g.tickedToBottom = !g.tickedToBottom; paint(); onChange({ ...g }); });
+  tog.append(label, sw);
+  const done = el('button', 'btn-main', 'Done'); done.type = 'button';
+  body.append(grp, tog, done);
+  function paint() {
+    for (const b of btns) { const on = b.dataset.value === g.by; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }
+    sw.classList.toggle('on', g.tickedToBottom); sw.setAttribute('aria-checked', String(g.tickedToBottom));
+  }
+  const sheet = openSheet({ title: 'Group list', body });
+  done.addEventListener('click', () => sheet.close());
+  paint();
+}
+
+export async function renderList(root, ctx) {
+  const { toast, state } = ctx;
+  const storeId = ctx.storeId;
+  const store = state.stores.find((s) => s.id === storeId);
+  const budget = api.store.get(budgetKey(storeId), '');
+  // First open: the title and a skeleton card until the data arrives. A redraw keeps what is on screen.
+  // If the load fails, app.js clears the page and shows the error in its place.
+  if (!root.querySelector('[data-list]')) {
+    const t = el('h1', 'title', 'List');
+    t.dataset.list = '1';
+    root.replaceChildren(t, skeletonRows());
+  }
+  const [data, categories] = await Promise.all([api.getList(storeId, budget), api.getCategories()]);
+  if (ctx.stale?.()) return; // a newer render has started: leave the page and dock alone
+  const lines = [...data.lines, ...data.unpriced];
+  const redraw = () => renderList(root, ctx);
+  let group = loadGroup(storeId);
+
   root.innerHTML = '';
+  const tripBox = el('div', 'trip-cards');
+  const tagBtn = el('button', 'budget-tag'); tagBtn.type = 'button';
+  const bar = el('div', 'list-bar');
+  const need = el('span', 'need');
+  const groupBtn = el('button', 'link groupbtn'); groupBtn.type = 'button';
+  bar.append(need, groupBtn);
+  const sections = el('div', 'sections lst');
+  const title = el('h1', 'title', 'List');
+  title.dataset.list = '1';
+  root.append(title, tripBox, tagBtn, bar, sections);
 
-  const summary = document.createElement('div');
-  summary.className = `summary ${data.status}`;
-  const of = data.budgetCents ? ` <span class="sub">of ${api.fmt(data.budgetCents)}</span>` : '';
-  summary.innerHTML = `<div><div class="big">${api.fmt(data.subtotalCents)}${of}</div><div class="sub" id="note"></div></div>
-    <label class="budget sub">Budget $<input inputmode="decimal" type="text" aria-label="Budget in dollars" value=""></label>`;
-  const input = summary.querySelector('input');
-  input.value = budget;
-  let note = `${data.lines.length + data.unpriced.length} item${data.lines.length + data.unpriced.length === 1 ? '' : 's'}`;
-  if (data.status === 'over') note = `Over budget by ${api.fmt(data.subtotalCents - data.budgetCents)}`;
-  else if (data.status === 'near') note = `Close to budget: ${api.fmt(data.budgetCents - data.subtotalCents)} left`;
-  if (data.unpriced.length) note += ` · ${data.unpriced.length} with no price yet (not counted)`;
-  summary.querySelector('#note').textContent = note;
-  input.addEventListener('change', () => { api.store.set(budgetKey, input.value.trim()); redraw(); });
-  root.append(summary);
+  // Budget tag, no meter.
+  const t = budgetTag({ subtotalCents: data.subtotalCents, budgetCents: data.budgetCents, status: data.status });
+  tagBtn.classList.add(`variant-${t.variant}`);
+  tagBtn.setAttribute('aria-label', `${t.label} ${fmt(t.bigCents)}. ${t.detail}. Set budget`);
+  const side = el('span', 'side');
+  side.append(el('span', 'k', t.label), el('span', 'fine', t.detail));
+  tagBtn.append(priceEl(t.bigCents), side);
+  tagBtn.addEventListener('click', () => openBudgetSheet(storeId, budget, redraw));
 
-  const form = document.createElement('form');
-  form.className = 'add';
-  form.innerHTML = '<input type="text" name="name" placeholder="Add to this list" autocomplete="off" aria-label="Add item to list"><button>Add</button>';
+  // "+ Add an item": a row that opens into an inline field. One node, moved into place by drawLive, so an open field survives a tick.
+  const addBox = el('div', 'addbox');
+  const addBtn = el('button', 'addrow'); addBtn.type = 'button';
+  addBtn.insertAdjacentHTML('beforeend', icon('plus'));
+  addBtn.append(el('span', '', 'Add an item'));
+  const form = el('form', 'addform'); form.hidden = true;
+  form.innerHTML = '<input type="text" name="name" placeholder="Add to this list" autocomplete="off" aria-label="Add item to list"><button type="submit" class="add-go">Add</button><button type="button" class="add-cancel">Cancel</button>';
+  addBox.append(addBtn, form);
+  function setAdding(on) {
+    form.hidden = !on; addBtn.hidden = on;
+    addBox.classList.toggle('open', on);
+    if (on) form.elements.name.focus(); else form.reset();
+  }
+  addBtn.addEventListener('click', () => setAdding(true));
+  form.querySelector('.add-cancel').addEventListener('click', () => setAdding(false));
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = form.elements.name.value.trim();
     if (!name) return;
+    const go = form.querySelector('.add-go');
+    go.disabled = true;
     try {
       const existing = (await api.getItems(storeId)).find((i) => i.name.toLowerCase() === name.toLowerCase());
       const item = existing ?? (await api.createItem({ name, storeId }));
       await api.patchItem(item.id, { onList: true });
       redraw();
-    } catch (err) { toast(err.message); }
+    } catch (err) { go.disabled = false; toast(err.message); }
   });
-  root.append(form);
 
-  const row = (l) => {
-    const el = document.createElement('div');
-    el.className = `row${checked.has(l.id) ? ' done' : ''}`;
-    const check = document.createElement('button');
-    check.className = 'check'; check.setAttribute('aria-label', `Check off ${l.name}`);
-    check.textContent = checked.has(l.id) ? '✓' : '';
-    check.addEventListener('click', () => {
-      if (checked.has(l.id)) checked.delete(l.id); else checked.add(l.id);
-      api.store.set(api.CHECKED_KEY, [...checked]);
-      el.classList.toggle('done'); check.textContent = checked.has(l.id) ? '✓' : '';
-    });
-    const thumb = l.photo ? Object.assign(document.createElement('img'), { className: 'thumb', src: `/photos/${l.photo}`, alt: '' })
-      : Object.assign(document.createElement('div'), { className: 'thumb', textContent: l.name[0]?.toUpperCase() ?? '' });
-    const info = document.createElement('div');
-    info.className = 'grow';
-    info.innerHTML = '<div class="name"></div><div class="sub"></div>';
-    info.querySelector('.name').textContent = l.name;
-    info.querySelector('.sub').textContent = l.lineCents == null ? 'no price yet'
-      : `${l.usualQty} × ${api.fmt(l.lastPriceCents)}`;
-    el.append(check, thumb, info);
-    if (l.lineCents != null) el.append(Object.assign(document.createElement('div'), { className: 'price', textContent: api.fmt(l.lineCents) }));
-    if (l.state === 'stocked') {
-      const rm = document.createElement('button');
-      rm.className = 'ghost icon-btn'; rm.textContent = '×'; rm.setAttribute('aria-label', `Remove ${l.name} from list`);
-      rm.addEventListener('click', async () => { try { await api.patchItem(l.id, { onList: false }); redraw(); } catch (err) { toast(err.message); } });
-      el.append(rm);
+  function rowFor(l, ticked) {
+    const row = el('div', `row${ticked ? ' done' : ''}`);
+    const tick = el('button', 'tick'); tick.type = 'button';
+    tick.setAttribute('aria-pressed', String(ticked));
+    tick.setAttribute('aria-label', `Tick ${l.name}`);
+    tick.addEventListener('click', () => { api.trips.toggle(storeId, l.id); drawLive(); });
+    const thumb = l.photo ? Object.assign(el('img', 'thumb'), { src: `/photos/${l.photo}`, alt: '' }) : el('div', 'thumb', l.name[0]?.toUpperCase() ?? '');
+    const info = el('div', 'info');
+    info.append(el('div', 'nm', l.name), el('div', 'sub', l.lineCents == null ? 'No price yet · not counted' : `${l.usualQty} × ${fmt(l.lastPriceCents)}`));
+    row.append(tick, thumb, info);
+    if (l.lineCents != null) row.append(el('span', 'rprice', fmt(l.lineCents)));
+    else { const d = el('span', 'dash', '–'); d.setAttribute('aria-hidden', 'true'); row.append(d); }
+    return row;
+  }
+
+  function drawPill(n) {
+    const slot = document.getElementById('dock-action');
+    if (!slot) return;
+    slot.replaceChildren();
+    if (!n) return;
+    const pill = el('button', 'finish-pill'); pill.type = 'button';
+    pill.setAttribute('aria-label', `Finish shopping, ${n} ticked`);
+    pill.append(el('span', '', 'Finish shopping'), el('i', '', String(n)));
+    pill.addEventListener('click', () => finishForStore(store, { toast, onDone: redraw }));
+    slot.append(pill);
+  }
+
+  // Redraws the bar, pill and groups from the data already loaded: ticking sends no request.
+  function drawLive() {
+    const ids = new Set(api.trips.get(storeId).ids);
+    const ticked = new Set(lines.filter((l) => ids.has(l.id)).map((l) => l.id));
+    const toGet = lines.length - ticked.size;
+    const st = listState(toGet, ticked.size);
+    tagBtn.hidden = bar.hidden = st === 'empty';
+    need.textContent = listMeta(toGet, ticked.size);
+    groupBtn.textContent = `${BY_LABEL[group.by]} ▾`;
+    groupBtn.setAttribute('aria-label', `Group list: ${BY_LABEL[group.by]}`);
+    drawPill(st === 'allTicked' ? 0 : ticked.size);
+    sections.innerHTML = '';
+    addBox.classList.toggle('solo', st !== 'normal');
+    if (st === 'empty') {
+      sections.append(emptyState({
+        icon: 'list', title: 'Nothing to buy here',
+        body: 'Tap the basket on a staple in your pantry and it shows up on this list.',
+        primary: { label: 'Check your pantry', icon: 'pantry', onClick: () => { location.hash = '#/pantry'; } },
+        secondary: { label: 'Add an item', onClick: () => setAdding(true) },
+      }), addBox);
+      return;
     }
-    return el;
-  };
+    if (st === 'allTicked') {
+      const n = ticked.size;
+      const es = emptyState({
+        icon: 'cart', title: "Everything's in the cart",
+        body: `${n} ${n === 1 ? 'item' : 'items'} · about ${fmt(data.subtotalCents)}. Finish to put ${n === 1 ? 'it' : 'them'} back in your pantry.`,
+        primary: { label: 'Finish shopping', onClick: () => finishForStore(store, { toast, onDone: redraw }) },
+        secondary: { label: 'Add an item', onClick: () => setAdding(true) },
+      });
+      es.querySelector('.es-ico').classList.add('butter');
+      sections.append(es, addBox);
+    }
+    const groups = groupList(lines, group.by, categories, ticked, group.tickedToBottom);
+    // The add row goes under the last group that still has things to get, not under the cart group.
+    let addAt = groups.length - 1;
+    for (let k = groups.length - 1; k >= 0; k--) { if (groups[k].key !== 'cart') { addAt = k; break; } }
+    groups.forEach((g, i) => {
+      const sec = el('section', 'sec');
+      if (g.title) { const h = el('h2', 'ghd'); h.append(el('span', 'lab', g.title), el('span', 'ct', String(g.items.length))); sec.append(h); }
+      const card = el('div', 'grp');
+      for (const l of g.items) card.append(rowFor(l, ticked.has(l.id)));
+      if (st === 'normal' && i === addAt) card.append(addBox);
+      sec.append(card);
+      sections.append(sec);
+    });
+  }
 
-  if (!data.lines.length && !data.unpriced.length) {
-    root.insertAdjacentHTML('beforeend', '<p class="empty">Nothing on this list yet. Mark staples Low or Out on the Review tab, or add something above.</p>');
-    return;
-  }
-  data.lines.forEach((l) => root.append(row(l)));
-  if (data.unpriced.length) {
-    root.insertAdjacentHTML('beforeend', '<h2>No price yet</h2>');
-    data.unpriced.forEach((l) => root.append(row(l)));
-  }
+  groupBtn.addEventListener('click', () => openGroupSheet(group, (g) => { group = g; api.store.set(groupKey(storeId), g); drawLive(); }));
+
+  renderTripCards(tripBox, {
+    stores: state.stores, trips: api.trips,
+    onFinish: (id) => finishForStore(state.stores.find((s) => s.id === id), { toast, onDone: redraw }),
+    onReview: (id) => {
+      if (id === storeId) return;
+      state.storeId = id; api.store.set('sw-store', id);
+      window.dispatchEvent(new HashChangeEvent('hashchange')); // app.js re-renders with the new store
+    },
+  });
+  drawLive();
 }
