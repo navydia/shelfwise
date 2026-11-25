@@ -64,6 +64,23 @@ Receipt reading uses tesseract.js on the server. The first receipt makes the ser
 
 This was not testable where the app was built. Upload one real receipt and look at the lines it finds. If the app says receipt reading isn't working, the reason is in the server log (`journalctl -u shelfwise`), most often that the language data could not be downloaded. If lines are missing or garbled, try a flatter, better-lit photo. Reading quality is the most likely thing to need tuning.
 
+## Keeping it running and updating it (pm2)
+
+```
+npm install -g pm2
+pm2 start ecosystem.config.cjs     # start (restarts itself if it crashes)
+pm2 status                         # is it online?
+pm2 logs shelfwise                 # live log (Ctrl+C to leave)
+pm2 restart shelfwise              # manual restart
+pm2 stop shelfwise                 # stop
+```
+
+To update after pushing changes from another machine: `npm run update`
+(runs `git pull` and `npm ci`). pm2 watches `src/` and restarts on its own;
+run `pm2 restart shelfwise` if you changed `package.json` dependencies.
+Changes inside `public/` need no restart. Set `SHELFWISE_DATA` / `PORT` in the
+terminal before `pm2 start` if you don't use the defaults.
+
 ## 6. Backups
 
 ```sh
@@ -95,6 +112,8 @@ git rev-parse HEAD   # write this down; you need it to roll back
 git pull && npm ci
 sudo systemctl restart shelfwise
 ```
+
+If you run it with pm2 instead of systemd, use the same backup and `git rev-parse HEAD` steps, then `npm run update` and `pm2 restart shelfwise`. Take the backup **before** `npm run update`: pm2 restarts the app as soon as the new code lands, and that first start is when the database is upgraded.
 
 The first start after upgrading migrates the database automatically, and you don't need to do anything. Staples that were marked **Low** or **Out** are now "on the list", so your shopping list looks the same as before. Ticks you made in the store before the upgrade are cleared, so you'll start with nothing ticked. 
 
