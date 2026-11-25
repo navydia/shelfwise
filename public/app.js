@@ -80,14 +80,14 @@ async function render() {
     return;
   }
   if (!state.stores.length) { renderFirstRun(); return; }
-  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open(), openSettings }); }
+  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open(), openSettings, reloadStores: () => reloadAfterEdit() }); }
   catch (err) {
     if (stale()) return;
     root.replaceChildren(errorState({ title: VIEW_TITLES[view], message: err.message, onRetry: render }));
   }
 }
 
-// Interim: until the settings sheets land, the cog opens the store menu (rename, recolour, add).
+// Interim: the List's cog still opens the store menu until List settings land. The Pantry has its own settings sheet.
 function openSettings() { storePicker.open(); }
 
 function renderFirstRun() {
@@ -147,13 +147,15 @@ const tabBar = mountTabBar(document.getElementById('tabs'), window);
 
 // The List tab's badge: unticked staples and one-offs for the List store (Ruling 2).
 let badgeKeys = [];
+let badgeStoreId = null;
 function drawBadge() {
   const ticked = new Set(api.trips.get(state.storeId).ids);
   tabBar.setBadge(badgeKeys.filter((k) => !ticked.has(k)).length);
 }
 async function refreshBadge() {
   const id = state.storeId;
-  if (id == null) { badgeKeys = []; drawBadge(); return; }
+  if (id !== badgeStoreId) { badgeKeys = []; badgeStoreId = id; drawBadge(); } // a store switch never shows the previous store's count
+  if (id == null) return;
   try {
     const data = await api.getList(id, api.store.get(budgetKey(id), ''));
     if (id !== state.storeId) return;

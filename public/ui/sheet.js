@@ -10,6 +10,18 @@ export function keyboardMetrics(innerHeight, vv) {
   return { inset, maxHeight: Math.max(160, Math.min(Math.round(innerHeight * 0.92), Math.round(vv.height - 12))) };
 }
 
+// Where Tab should go instead of its default, or null to let the browser move on. Shift+Tab from the sheet
+// itself (where focus starts) counts as being on the first control, so it wraps rather than escaping the dialog.
+export function nextTabTarget(items, active, shift, container) {
+  const first = items[0]; const last = items[items.length - 1];
+  if (!container.contains(active) || (!shift && active === container)) return first;
+  if (shift && (active === first || active === container)) return last;
+  if (!shift && active === last) return first;
+  return null;
+}
+
+const OPEN = []; // sheets can stack (a size sheet over the staple sheet): only the top one answers keys
+
 const FIELD = 'input, select, textarea, [contenteditable=true]';
 
 // Scrolls a field into view once the keyboard has had time to appear. For inline inputs outside a sheet too.
@@ -49,20 +61,20 @@ export function openSheet({ title, body, onClose } = {}) {
     if (closed) return;
     closed = true;
     document.removeEventListener('keydown', onKey, true);
+    OPEN.splice(OPEN.indexOf(el), 1);
     if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
     dim.remove(); el.remove();
     if (opener && typeof opener.focus === 'function' && document.contains(opener)) opener.focus();
     onClose?.();
   }
   function onKey(e) {
+    if (OPEN[OPEN.length - 1] !== el) return;
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); close(); return; }
     if (e.key !== 'Tab') return;
     const items = [...el.querySelectorAll(FOCUSABLE)].filter((n) => !n.hidden && n.offsetParent !== null);
     if (!items.length) { e.preventDefault(); el.focus(); return; }
-    const first = items[0]; const last = items[items.length - 1];
-    if (!el.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
-    else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    const target = nextTabTarget(items, document.activeElement, e.shiftKey, el);
+    if (target) { e.preventDefault(); target.focus(); }
   }
   const vv = window.visualViewport;
   function fit() {
@@ -76,6 +88,7 @@ export function openSheet({ title, body, onClose } = {}) {
   if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
   el.addEventListener('focusin', (e) => { if (e.target.matches(FIELD)) revealField(e.target); });
   fit();
+  OPEN.push(el);
   document.addEventListener('keydown', onKey, true);
   dim.addEventListener('click', close);
   el.focus({ preventScroll: true });

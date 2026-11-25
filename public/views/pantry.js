@@ -11,6 +11,8 @@ import { thumb } from '../ui/thumb.js';
 import { titleRow } from '../ui/title-row.js';
 import { openFilterSheet, defaultSort } from './filter-sheet.js';
 import { openStapleSheet } from './staple-sheet.js';
+import { openSizePicker } from './size-picker.js';
+import { openPantrySettings } from './pantry-settings.js';
 
 const FILTER_KEY = 'sw-pantry-filter';
 const FOLD_KEY = 'sw-fold';
@@ -54,7 +56,7 @@ export async function renderPantry(root, ctx) {
   const singleStore = storeId != null;
   // First open: the title and a skeleton card until the data arrives. A redraw keeps what is on screen.
   if (!root.querySelector('[data-pantry]')) {
-    const t = titleRow('Pantry', ctx.openSettings);
+    const t = titleRow('Pantry', openSettings);
     t.dataset.pantry = '1';
     root.replaceChildren(t, skeletonRows());
   }
@@ -67,7 +69,7 @@ export async function renderPantry(root, ctx) {
   const view = (o) => pantryView(items, o, viewCtx);
 
   root.innerHTML = '';
-  const title = titleRow('Pantry', ctx.openSettings);
+  const title = titleRow('Pantry', openSettings);
   title.dataset.pantry = '1';
   const tripBox = el('div', 'trip-cards');
   const find = el('div', 'find');
@@ -86,6 +88,12 @@ export async function renderPantry(root, ctx) {
   root.append(title, tripBox, find, active, sections);
 
   const redraw = () => renderPantry(root, ctx);
+  function openSettings() {
+    openPantrySettings({
+      state, reloadStores: ctx.reloadStores, onChanged: redraw,
+      onAddStaple: () => openStaple(null),
+    });
+  }
   const mainId = stores.find((s) => s.isMain)?.id ?? stores[0]?.id;
   const targetStoreId = storeId ?? mainId; // new staples: the picked store, or the main store under All stores
   const openStaple = (item, extra = {}) => pantryHooks.openStapleSheet(item, {
@@ -133,6 +141,11 @@ export async function renderPantry(root, ctx) {
     let busy = false;
     btn.addEventListener('click', async () => {
       if (busy) return;
+      // Several sizes: ask which one this time. One size goes straight on the list.
+      if (!item.onList && item.sizes.length > 1) {
+        openSizePicker(item, { onAdded: (saved) => { Object.assign(item, saved); paint(); } });
+        return;
+      }
       busy = true;
       const want = !item.onList;
       item.onList = want; paint();

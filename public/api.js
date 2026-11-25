@@ -23,7 +23,8 @@ async function request(method, url, body, isForm = false) {
   flagOffline(res.headers.get('x-shelfwise-cache') === '1');
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Request failed (${res.status})`);
+    // data keeps the whole error body (for example archivedId on a 409) for callers that can act on it.
+    throw Object.assign(new Error(err.error || `Request failed (${res.status})`), { status: res.status, data: err });
   }
   return res.status === 204 ? null : res.json();
 }
