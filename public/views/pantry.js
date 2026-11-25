@@ -112,10 +112,11 @@ export async function renderPantry(root, ctx) {
   function paintDetail(sub, item, flatAll) {
     const price = item.lastPriceCents == null ? null
       : item.usualQty > 1 ? `${item.usualQty} × ${fmt(item.lastPriceCents)}` : fmt(item.lastPriceCents);
-    const rest = [price ?? (item.onList ? null : 'No price yet'), flatAll ? storeName(item.storeId) : null].filter(Boolean).join(' · ');
+    const cue = api.trips.get(item.storeId).ids.includes(item.id) ? 'In the cart' : item.onList ? 'On your list' : null;
+    const rest = [price ?? (cue ? null : 'No price yet'), flatAll ? storeName(item.storeId) : null].filter(Boolean).join(' · ');
     sub.replaceChildren();
-    if (item.onList) sub.append(el('b', '', 'On your list'));
-    if (rest) sub.append(item.onList ? ` · ${rest}` : rest);
+    if (cue) sub.append(el('b', '', cue));
+    if (rest) sub.append(cue ? ` · ${rest}` : rest);
   }
 
   function rowFor(item, v, q) {

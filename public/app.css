@@ -139,6 +139,7 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .sub-link { display: inline; min-height: 0; padding: 0; background: transparent; font: inherit; font-weight: 700; color: var(--fig); text-decoration: underline; text-underline-offset: 3px; }
 .fbtn { position: relative; flex: none; width: 36px; height: 36px; min-height: 36px; padding: 0; display: grid; place-items: center; border-radius: 10px; background: transparent; color: var(--f900); }
 .fbtn .ic { width: 20px; height: 20px; }
+.fbtn::before { content: ''; position: absolute; inset: -4px; } /* 44px tap target, 36px look */
 .fbtn.on { background: var(--f900); color: var(--butter); }
 .fbtn .badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; border-radius: 9px; background: var(--butter); color: var(--f950); font-family: var(--font-disp); font-weight: 800; font-size: 11px; display: grid; place-items: center; padding: 0 4px; box-shadow: 0 0 0 2px var(--card); }
 .addbtn { flex: none; width: 46px; height: 46px; min-height: 46px; padding: 0; display: grid; place-items: center; border-radius: 14px; background: var(--f950); color: var(--butter); box-shadow: var(--lift-btn); }
