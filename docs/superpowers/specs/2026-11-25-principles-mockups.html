@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shelfwise: design principles pass</title>
+<style>body{margin:0;background:#1c1a1d;color:#ECE7DF;font-family:Figtree,system-ui,sans-serif;padding:24px 16px 60px}h2{font-size:24px;margin:0 0 8px}h3{font-size:18px}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  .pr {
+    --paper:#F2EEE6; --card:#FBF9F5; --line:#E4DED3; --stone:#6E675D; --pebble:#8F887D;
+    --f950:#1E1519; --f900:#2C2027; --fig:#4A3242; --fig-2:#5E4656; --plum-t:#EEE5EA;
+    --butter:#E8CC7A; --butter-d:#D9B95E;
+    --teal:#22434A; --claret:#5A2E36;
+    --sans:'Figtree', system-ui, sans-serif; --brand:'Bricolage Grotesque', sans-serif;
+    font-family:var(--sans);
+  }
+  .pr .lede { opacity:.85; max-width:900px; line-height:1.55; }
+  .pr table.rules { border-collapse:collapse; width:100%; max-width:1180px; font-size:13.5px; margin:10px 0 6px; }
+  .pr table.rules th, .pr table.rules td { text-align:left; vertical-align:top; padding:9px 10px; border-bottom:1px solid rgba(128,128,128,.28); line-height:1.45; }
+  .pr table.rules th { font-size:11px; text-transform:uppercase; letter-spacing:.08em; opacity:.65; }
+  .pr table.rules td:first-child { font-weight:700; white-space:nowrap; }
+  .pr .src { opacity:.6; font-size:12px; white-space:nowrap; }
+  .pr h3 { margin-top:34px; }
+  .row { display:flex; gap:26px; flex-wrap:wrap; justify-content:center; margin:18px 0 8px; }
+  .col { width:375px; }
+  .col.sm { width:300px; }
+  .cap { font-size:13px; opacity:.85; margin:12px 4px 0; line-height:1.55; }
+  .cap b { opacity:1; }
+  .cap ul { margin:6px 0 0; padding-left:18px; }
+  .cap li { margin:3px 0; }
+
+  /* phone */
+  .ph { width:375px; height:780px; border-radius:44px; border:10px solid #141012; overflow:clip; position:relative; background:var(--paper); color:var(--f900); font-family:var(--sans); box-shadow:0 18px 40px rgba(0,0,0,.25); }
+  .sm .ph { width:300px; height:600px; border-radius:38px; }
+  .sb { height:40px; display:flex; justify-content:space-between; align-items:center; padding:0 26px; font-size:13px; font-weight:600; color:var(--f950); }
+  .in { padding:2px 18px 0; }
+  .sm .in { padding:2px 16px 0; }
+
+  .wm { font-family:var(--brand); font-weight:800; font-size:23px; letter-spacing:-.045em; color:var(--f950); position:relative; }
+  .wm .i { position:relative; }
+  .wm .i::before { content:''; position:absolute; left:52%; top:.1em; width:.27em; height:.17em; transform:translateX(-50%) rotate(-8deg); border-radius:.04em .08em .08em .04em; background:var(--butter); box-shadow:0 0 0 1px var(--f950); }
+  .hdr { display:flex; justify-content:space-between; align-items:center; height:40px; }
+  .pill { display:flex; align-items:center; gap:8px; font-weight:600; font-size:14px; color:var(--f900); background:var(--card); padding:8px 12px; border-radius:999px; box-shadow:0 1px 2px rgba(30,21,25,.08), inset 0 1px 0 #fff; }
+  .dot { width:10px; height:10px; border-radius:3px; flex:none; }
+
+  h1.t { font-family:var(--sans); font-weight:800; font-size:30px; letter-spacing:-.025em; color:var(--f950); margin:16px 0 2px; line-height:1.1; }
+  .sub1 { font-size:14.5px; color:var(--stone); margin:0 0 16px; line-height:1.5; }
+  .sub1 a { color:var(--fig); font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+
+  .search { flex:1; display:flex; align-items:center; gap:10px; height:46px; border-radius:14px; background:var(--card); padding:0 6px 0 14px; color:var(--stone); font-size:15.5px; box-shadow:0 1px 2px rgba(30,21,25,.07), inset 0 1px 0 #fff; }
+  .search .g { flex:1; }
+  .search svg, .ico { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+  .ibtn { width:36px; height:36px; border-radius:10px; display:grid; place-items:center; color:var(--f900); }
+  .addbtn { width:46px; height:46px; border-radius:14px; display:grid; place-items:center; background:var(--f950); color:var(--butter); flex:none; box-shadow:0 2px 4px rgba(30,21,25,.25), inset 0 1px 0 rgba(255,255,255,.12); }
+  .find { display:flex; gap:10px; }
+
+  /* section header */
+  .shd { display:flex; align-items:center; gap:9px; margin:26px 2px 10px; }
+  .shd .nm { font-weight:700; font-size:17px; color:var(--f950); }
+  .shd .ct { font-size:14px; color:var(--stone); font-weight:500; }
+  .shd .chev { margin-left:auto; color:var(--stone); font-size:13px; }
+  .ghd { display:flex; align-items:baseline; gap:8px; margin:22px 2px 8px; font-weight:700; font-size:15px; color:var(--f950); }
+  .ghd .ct { margin-left:auto; font-size:13px; color:var(--stone); font-weight:500; }
+
+  /* grouped card */
+  .grp { background:var(--card); border-radius:16px; box-shadow:0 1px 2px rgba(30,21,25,.06), 0 1px 0 rgba(30,21,25,.04), inset 0 1px 0 #fff; overflow:hidden; }
+  .r { display:flex; align-items:center; gap:12px; padding:10px 12px 10px 12px; min-height:60px; position:relative; }
+  .r + .r::before { content:''; position:absolute; top:0; right:0; left:64px; border-top:1px solid var(--line); }
+  .list .r + .r::before { left:52px; }
+  .th { width:40px; height:40px; border-radius:10px; background:#ECE6DA; display:grid; place-items:center; font-size:22px; flex:none; }
+  .g { flex:1; min-width:0; }
+  .n { font-weight:600; font-size:16px; color:var(--f950); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.3; }
+  .s { font-size:14px; color:var(--stone); line-height:1.4; }
+  .s b { color:var(--fig-2); font-weight:700; }
+  .bk { width:44px; height:44px; display:grid; place-items:center; flex:none; color:var(--fig-2); margin-right:-6px; }
+  .bk svg { width:24px; height:24px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; }
+  .bk.on i { width:38px; height:38px; border-radius:50%; display:grid; place-items:center; background:var(--butter); color:var(--fig); box-shadow:0 1px 2px rgba(30,21,25,.18), inset 0 1px 0 rgba(255,255,255,.5); }
+  .pr .price { font-weight:600; font-size:16px; color:var(--f950); font-variant-numeric:tabular-nums; }
+  .tk { width:26px; height:26px; border-radius:50%; border:2px solid var(--pebble); flex:none; }
+  .tk.on { background:var(--f900); border-color:var(--f900); display:grid; place-items:center; }
+  .tk.on::after { content:''; width:6px; height:11px; border:2.5px solid var(--butter); border-top:0; border-left:0; transform:rotate(45deg) translate(-1px,-1px); }
+  .r.done .n { text-decoration:line-through; color:var(--stone); font-weight:500; }
+  .r.done .price { color:var(--stone); font-weight:500; }
+  .addrow { display:flex; align-items:center; gap:10px; padding:14px 12px; color:var(--fig); font-weight:700; font-size:15.5px; }
+  .addrow svg { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; }
+
+  /* budget tag */
+  .tag { background:var(--butter); color:var(--f950); border-radius:8px 18px 18px 8px; padding:12px 16px 12px 30px; position:relative; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 2px rgba(30,21,25,.12), inset 0 1px 0 rgba(255,255,255,.45); }
+  .tag::before { content:''; position:absolute; left:11px; top:50%; width:9px; height:9px; margin-top:-4.5px; border-radius:50%; background:var(--paper); box-shadow:inset 0 1px 2px rgba(0,0,0,.18); }
+  .tagp { font-family:var(--brand); font-weight:800; letter-spacing:-.04em; font-size:44px; line-height:.9; display:inline-flex; align-items:flex-start; }
+  .tagp sup { font-size:.45em; margin-top:.12em; margin-left:2px; }
+  .tagp .d { font-size:.5em; margin-top:.1em; margin-right:1px; }
+  .tag .side { text-align:right; font-size:13px; line-height:1.4; }
+  .tag .side b { display:block; font-size:14px; font-weight:700; }
+  .meta { display:flex; justify-content:space-between; align-items:center; margin:18px 2px 0; font-size:14.5px; color:var(--stone); }
+  .meta b { color:var(--f950); font-weight:700; }
+  .meta a { color:var(--fig); font-weight:700; display:flex; align-items:center; gap:4px; }
+
+  /* dock */
+  .dock { position:absolute; left:14px; right:14px; bottom:22px; display:flex; align-items:center; z-index:5; }
+  .glass { background:rgba(251,249,245,.78); -webkit-backdrop-filter:blur(14px) saturate(170%); backdrop-filter:blur(14px) saturate(170%); border:1px solid rgba(255,255,255,.75); box-shadow:inset 0 1px 0 rgba(255,255,255,.9), 0 10px 28px rgba(30,21,25,.18), 0 1px 3px rgba(30,21,25,.12); }
+  .tabs { width:100%; height:62px; border-radius:31px; display:flex; align-items:center; padding:0 5px; }
+  .tabs span { flex:1; height:52px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border-radius:26px; font-weight:600; font-size:11px; color:#4E4741; }
+  .tabs svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .tabs .on { color:var(--f950); background:rgba(74,50,66,.11); }
+  .dock.mini .tabs { width:62px; } .dock.mini .tabs span:not(.on) { display:none; } .dock.mini .tabs .on { font-size:0; gap:0; }
+  .fin { margin-left:auto; height:46px; padding:0 8px 0 18px; border-radius:23px; background:var(--f950); color:var(--butter); display:flex; align-items:center; gap:10px; font-weight:700; font-size:15px; box-shadow:0 6px 16px rgba(30,21,25,.28), inset 0 1px 0 rgba(255,255,255,.12); }
+  .fin i { font-style:normal; min-width:28px; height:28px; border-radius:14px; background:var(--butter); color:var(--f950); display:grid; place-items:center; font-size:13px; }
+  .fade { position:absolute; left:0; right:0; bottom:0; height:120px; background:linear-gradient(rgba(242,238,230,0), var(--paper) 70%); z-index:4; pointer-events:none; }
+
+  /* empty states */
+  .empty { display:flex; flex-direction:column; align-items:center; text-align:center; padding:30px 10px 0; }
+  .eico { width:68px; height:68px; border-radius:50%; background:#E9E3D8; display:grid; place-items:center; color:var(--fig); margin-bottom:16px; box-shadow:inset 0 1px 2px rgba(30,21,25,.08); }
+  .eico svg { width:30px; height:30px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+  .empty h2 { font-family:var(--sans); font-weight:800; font-size:21px; letter-spacing:-.015em; color:var(--f950); margin:0 0 6px; }
+  .empty p { font-size:15px; line-height:1.5; color:var(--stone); margin:0 0 18px; max-width:250px; }
+  .btn { display:flex; align-items:center; justify-content:center; gap:8px; height:50px; border-radius:14px; background:var(--f950); color:var(--butter); font-weight:700; font-size:16px; width:100%; box-shadow:0 2px 4px rgba(30,21,25,.22), inset 0 1px 0 rgba(255,255,255,.12); }
+  .btn svg { width:19px; height:19px; stroke:currentColor; fill:none; stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+  .lnk { margin-top:12px; color:var(--fig); font-weight:700; font-size:15px; padding:6px 10px; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:16px; }
+  .chip { background:var(--card); border-radius:999px; padding:8px 12px; font-weight:600; font-size:14px; color:var(--f900); box-shadow:0 1px 2px rgba(30,21,25,.08), inset 0 1px 0 #fff; }
+  .hint { font-size:13px; color:var(--stone); margin-top:18px; }
+  .steps { text-align:left; width:100%; margin:6px 0 18px; }
+  .step { display:flex; gap:12px; align-items:flex-start; padding:9px 0; }
+  .step i { font-style:normal; width:26px; height:26px; border-radius:50%; background:var(--butter); color:var(--f950); font-weight:800; font-size:13px; display:grid; place-items:center; flex:none; }
+  .step span { font-size:15px; line-height:1.45; color:var(--f900); }
+  .field { width:100%; text-align:left; margin-bottom:12px; }
+  .field label { display:block; font-weight:700; font-size:14px; color:var(--f950); margin-bottom:6px; }
+  .field .inp { height:48px; border-radius:12px; background:var(--card); border:1.5px solid var(--pebble); display:flex; align-items:center; padding:0 14px; color:var(--stone); font-size:15.5px; }
+  .sk { background:linear-gradient(90deg,#E9E3D8 0%,#F2EDE4 50%,#E9E3D8 100%); background-size:200% 100%; border-radius:8px; animation:sh 1.4s infinite linear; }
+  @keyframes sh { from { background-position:200% 0 } to { background-position:-200% 0 } }
+  .note { font-size:11.5px; color:var(--stone); text-align:center; margin-top:4px; }
+  .pr h2 { overflow-wrap:anywhere; }
+  @media (max-width:760px) {
+    .pr table.rules, .pr table.rules tbody, .pr table.rules tr, .pr table.rules td { display:block; width:auto; }
+    .pr table.rules tr:first-child { display:none; }
+    .pr table.rules tr { padding:10px 0; border-bottom:1px solid rgba(128,128,128,.28); }
+    .pr table.rules td { border:0; padding:3px 0; white-space:normal !important; }
+    .pr table.rules td:nth-child(2)::before { content:"Now: "; font-weight:700; }
+    .pr table.rules td:nth-child(3)::before { content:"Proposed: "; font-weight:700; }
+    .row { gap:22px; }
+    .col, .col.sm { width:100%; max-width:375px; }
+    .ph { width:100%; }
+    .sm .ph { width:100%; max-width:320px; margin:0 auto; }
+  }
+</style>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="b-add" viewBox="0 0 24 24"><path d="M3.5 9.5h17l-1.6 9.1a2 2 0 0 1-2 1.7H7.1a2 2 0 0 1-2-1.7z"/><path d="M8 9.5l2.5-5M16 9.5l-2.5-5"/><path d="M12 12.5v5M9.5 15h5"/></symbol>
+  <symbol id="b-on" viewBox="0 0 24 24"><path d="M3.5 9.5h17l-1.6 9.1a2 2 0 0 1-2 1.7H7.1a2 2 0 0 1-2-1.7z"/><path d="M8 9.5l2.5-5M16 9.5l-2.5-5"/><path d="M9.3 15l2 2 3.6-3.8"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-pantry" viewBox="0 0 24 24"><path d="M7 4h10M8 4v2a3 3 0 0 0-2 3v9a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a3 3 0 0 0-2-3V4"/><path d="M6 13h12"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2"/><circle cx="5" cy="18" r="1"/></symbol>
+  <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.2 6.5l2.6 1.5M17.2 16l2.6 1.5M4.2 17.5l2.6-1.5M17.2 8l2.6-1.5"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-photo" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-5-5-8 8"/></symbol>
+  <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 7H6.2"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24"><path d="M4 10l1.5-5h13L20 10"/><path d="M4 10h16v2a3 3 0 0 1-5.3 1.9A3 3 0 0 1 12 15a3 3 0 0 1-2.7-1.1A3 3 0 0 1 4 12z"/><path d="M5.5 15v5h13v-5"/></symbol>
+  <symbol id="i-searchx" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5M9 9l4 4M13 9l-4 4"/></symbol>
+  <symbol id="i-filterx" viewBox="0 0 24 24"><path d="M4 5h16l-6 7v6l-4 2v-8z"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></symbol>
+</defs></svg>
+
+<div class="pr">
+  <h2>Shelfwise, held up against the three articles</h2>
+  <p class="lede">These are proposals only; nothing is built. The table is what I found in the current app, then the screens show the fixes. Your rule "every empty state has a call to action" is applied to every empty state the app has.</p>
+
+  <table class="rules">
+    <tr><th>Principle</th><th>What the current app does</th><th>Proposed change</th><th>Source</th></tr>
+    <tr><td>Use space to group, not boxes</td><td>Every row is its own bordered card: 17 boxes on the Pantry, plus a filled square behind every basket.</td><td>One card per store or aisle with hairline dividers; the off-state basket is just the icon (44px tap area kept).</td><td class="src">Dannaway 1, 5 · Kennedy 3</td></tr>
+    <tr><td>Colour only where it means something</td><td>Store banners are big solid Fig/Teal bars, so the loudest thing on the Pantry isn't tappable data. Butter edge + Butter button both mark "on the list".</td><td>Store colour shrinks to a dot beside a sentence-case store name. "On the list" is the Butter button plus the words; the extra edge goes.</td><td class="src">Dannaway 6 · Kennedy 2 · 58 rules 31, 34</td></tr>
+    <tr><td>One clear focal point</td><td>On the List, every row price is in the same big shelf-tag type as the budget, and the black "Add" button is the darkest thing on screen.</td><td>Only the budget tag uses shelf-tag figures; row prices become regular 16px. Adding moves to a quiet "+ Add an item" row at the end of the list.</td><td class="src">Dannaway 4 · 58 rules 7, 9</td></tr>
+    <tr><td>Limit uppercase</td><td>"MARKET BASKET", "TO GET 6", "IN THE CART", "LEFT TO SPEND".</td><td>Sentence case everywhere ("Market Basket", "6 to get", "In the cart", "Left to spend").</td><td class="src">Dannaway 12</td></tr>
+    <tr><td>One typeface, few weights</td><td>Four families: Bricolage, Figtree, the system font and Plex Mono, across 5 weights.</td><td>Figtree for all UI text (400/600/700, 800 for titles). Bricolage only for the wordmark and the budget figure; mono only for raw receipt lines.</td><td class="src">Dannaway 10, 13 · 58 rules 27</td></tr>
+    <tr><td>Remove repeated words</td><td>"$3.49 last paid" on every row.</td><td>Just "$3.49"; the edit sheet still says where the price came from.</td><td class="src">58 rules 11, 37</td></tr>
+    <tr><td>Light comes from the sky</td><td>Cards and buttons are flat colour blocks; only the tab bar has depth.</td><td>A faint top highlight and 1–2px bottom shadow on cards, buttons, the tag and pills, so tappable things sit slightly above the page.</td><td class="src">Kennedy 1</td></tr>
+    <tr><td>Double the whitespace</td><td>Store sections and aisle groups sit ~12px apart, the same gap as between rows.</td><td>More space above a group than inside it (26px between stores, 22px above aisle headers, 8px below).</td><td class="src">Kennedy 3 · Dannaway 1</td></tr>
+    <tr><td>Empty states need a next step</td><td>Empty Pantry and List are one grey sentence; first run is a bare form; Settings is a dead end.</td><td>Every empty state gets an icon, a short line, one primary button and (where useful) a secondary link. See the bottom row.</td><td class="src">Your rule · 58 rules 17, 21</td></tr>
+    <tr><td>Feedback while waiting</td><td>Screens are blank for a moment while data loads.</td><td>Skeleton rows in the shape of the screen.</td><td class="src">58 rules 22</td></tr>
+    <tr><td>Smart defaults save time</td><td>A new pantry starts from nothing; you type every staple.</td><td>The empty Pantry offers one-tap common staples (Milk, Eggs, Bread…).</td><td class="src">58 rules 16</td></tr>
+  </table>
+  <p class="lede" style="font-size:12.5px;opacity:.65">Already in line, no change: contrast (all text ≥4.5:1, controls ≥3:1), left-aligned text, no pure black, colour never the only signal, consistent outlined 2px icon set with labels on the tab bar.</p>
+
+  <h3>Main screens, proposed</h3>
+  <div class="row">
+
+    <!-- PANTRY -->
+    <div class="col">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:conic-gradient(#4A3242 0 50%,#22434A 0)"></i>All stores<svg class="ico" style="width:16px;height:16px;color:var(--stone)"><use href="#i-chev"/></svg></span></div>
+          <h1 class="t">Pantry</h1>
+          <p class="sub1">4 staples on your list · <a>View list</a></p>
+          <div class="find"><div class="search"><svg><use href="#i-search"/></svg><span class="g">Search staples</span><span class="ibtn"><svg class="ico"><use href="#i-filter"/></svg></span></div><span class="addbtn"><svg class="ico" style="width:22px;height:22px"><use href="#i-plus"/></svg></span></div>
+
+          <div class="shd"><i class="dot" style="background:#4A3242"></i><span class="nm">Market Basket</span><span class="ct">13</span><svg class="ico chev" style="width:18px;height:18px;margin-left:auto;color:var(--stone)"><use href="#i-chev"/></svg></div>
+          <div class="grp">
+            <div class="r"><div class="th">🥬</div><div class="g"><div class="n">Baby spinach</div><div class="s">$3.49</div></div><span class="bk"><svg><use href="#b-add"/></svg></span></div>
+            <div class="r"><div class="th">🍌</div><div class="g"><div class="n">Bananas</div><div class="s"><b>On your list</b> · $0.69</div></div><span class="bk on"><i><svg><use href="#b-on"/></svg></i></span></div>
+            <div class="r"><div class="th">🍗</div><div class="g"><div class="n">Chicken thighs</div><div class="s">$8.99</div></div><span class="bk"><svg><use href="#b-add"/></svg></span></div>
+            <div class="r"><div class="th">🥫</div><div class="g"><div class="n">Crushed tomatoes</div><div class="s">2 × $1.79</div></div><span class="bk"><svg><use href="#b-add"/></svg></span></div>
+            <div class="r"><div class="th">🥚</div><div class="g"><div class="n">Eggs, large dozen</div><div class="s">$3.89</div></div><span class="bk"><svg><use href="#b-add"/></svg></span></div>
+            <div class="r"><div class="th">🫛</div><div class="g"><div class="n">Frozen peas</div><div class="s"><b>On your list</b> · $2.29</div></div><span class="bk on"><i><svg><use href="#b-on"/></svg></i></span></div>
+          </div>
+          <div class="shd"><i class="dot" style="background:#22434A"></i><span class="nm">H Mart</span><span class="ct">3</span></div>
+        </div>
+        <div class="fade"></div>
+        <div class="dock"><div class="tabs glass"><span class="on"><svg><use href="#i-pantry"/></svg>Pantry</span><span><svg><use href="#i-list"/></svg>List</span><span><svg><use href="#i-receipt"/></svg>Receipt</span><span><svg><use href="#i-settings"/></svg>Settings</span></div></div>
+      </div>
+      <div class="cap"><b>Pantry</b>
+        <ul>
+          <li>Store banner → colour dot + store name in sentence case. The loudest things left are the title and the Butter "on your list" buttons, which is where the eye should go.</li>
+          <li>One card per store, hairline dividers; the off basket is a plain icon.</li>
+          <li>A context line under the title ("4 staples on your list · View list") with the only Fig-coloured link, because it's tappable.</li>
+          <li>Filter moves inside the search field; the + becomes the one dark button (adding a staple is the main action here).</li>
+          <li>"Last paid" dropped from every row.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- LIST -->
+    <div class="col">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in list">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:#4A3242"></i>Market Basket<svg class="ico" style="width:16px;height:16px;color:var(--stone)"><use href="#i-chev"/></svg></span></div>
+          <h1 class="t">List</h1>
+          <div class="tag" style="margin-top:14px"><span class="tagp"><span class="d">$</span>13<sup>40</sup></span><span class="side"><b>Left to spend</b>$61.60 of $75</span></div>
+          <div class="meta"><span><b>4 to get</b> · 2 in the cart</span><a>By aisle<svg class="ico" style="width:16px;height:16px"><use href="#i-chev"/></svg></a></div>
+
+          <div class="ghd">Aisle 4<span class="ct">2</span></div>
+          <div class="grp">
+            <div class="r"><span class="tk"></span><div class="g"><div class="n">Spaghetti</div><div class="s">2 × $1.89</div></div><span class="price">$3.78</span></div>
+            <div class="r"><span class="tk"></span><div class="g"><div class="n">Olive oil</div><div class="s">1 × $11.99</div></div><span class="price">$11.99</span></div>
+          </div>
+          <div class="ghd">Dairy<span class="ct">2</span></div>
+          <div class="grp">
+            <div class="r"><span class="tk"></span><div class="g"><div class="n">Salted butter</div><div class="s">1 × $5.49</div></div><span class="price">$5.49</span></div>
+            <div class="r"><span class="tk"></span><div class="g"><div class="n">Fresh basil</div><div class="s">No price yet · not counted</div></div><span class="price" style="color:var(--pebble)">—</span></div>
+          </div>
+          <div class="ghd">In the cart<span class="ct">2</span></div>
+          <div class="grp">
+            <div class="r done"><span class="tk on"></span><div class="g"><div class="n">Whole milk</div></div><span class="price">$4.29</span></div>
+            <div class="addrow"><svg><use href="#i-plus"/></svg>Add an item</div>
+          </div>
+        </div>
+        <div class="fade"></div>
+        <div class="dock mini"><div class="tabs glass"><span><svg><use href="#i-pantry"/></svg>Pantry</span><span class="on"><svg><use href="#i-list"/></svg>List</span><span><svg><use href="#i-receipt"/></svg>Receipt</span><span><svg><use href="#i-settings"/></svg>Settings</span></div><div class="fin">Finish shopping<i>2</i></div></div>
+      </div>
+      <div class="cap"><b>List</b>
+        <ul>
+          <li>The budget tag is the only big figure; row prices are plain 16px, right-aligned, so the eye goes tag → items.</li>
+          <li>"6 to get" becomes "4 to get · 2 in the cart": progress shown in words (no bar, as you asked).</li>
+          <li>The black "Add" field is gone from the top; "+ Add an item" sits at the end of the list in Fig, as a link.</li>
+          <li>Rows grouped into one card per aisle; more space above each header than below it.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3>Every empty state, with a call to action</h3>
+  <div class="row">
+
+    <!-- FIRST RUN -->
+    <div class="col sm">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span></div>
+          <div class="empty" style="align-items:flex-start;text-align:left;padding-top:20px">
+            <h2 style="font-size:26px">Never forget a staple again</h2>
+            <div class="steps">
+              <div class="step"><i>1</i><span>Add the things you always buy.</span></div>
+              <div class="step"><i>2</i><span>Tap the basket when one runs low. It goes on your list.</span></div>
+              <div class="step"><i>3</i><span>Snap the receipt so prices stay real.</span></div>
+            </div>
+            <div class="field"><label>Where do you shop most?</label><div class="inp">e.g. Market Basket</div></div>
+            <span class="btn">Get started</span>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>First run.</b> Three steps explain the app, then one question and one button. Tabs stay hidden until a store exists.</p>
+    </div>
+
+    <!-- PANTRY EMPTY -->
+    <div class="col sm">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:#4A3242"></i>Market Basket</span></div>
+          <h1 class="t">Pantry</h1>
+          <div class="empty">
+            <div class="eico"><svg><use href="#b-add"/></svg></div>
+            <h2>Your pantry is empty</h2>
+            <p>Add what you buy every week. When one runs low, tap its basket.</p>
+            <span class="btn"><svg><use href="#i-plus"/></svg>Add a staple</span>
+            <div class="hint">Or start with common ones</div>
+            <div class="chips"><span class="chip">+ Milk</span><span class="chip">+ Eggs</span><span class="chip">+ Bread</span><span class="chip">+ Butter</span><span class="chip">+ Bananas</span></div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Empty Pantry.</b> Primary button, plus one-tap common staples so the first minute isn't all typing.</p>
+    </div>
+
+    <!-- SEARCH NO MATCH -->
+    <div class="col sm">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:#4A3242"></i>Market Basket</span></div>
+          <h1 class="t">Pantry</h1>
+          <div class="search" style="margin-top:12px;color:var(--f950);box-shadow:0 0 0 2px var(--fig)"><svg><use href="#i-search"/></svg><span class="g">oat milk</span></div>
+          <div class="empty">
+            <div class="eico"><svg><use href="#i-searchx"/></svg></div>
+            <h2>No “oat milk” yet</h2>
+            <p>It isn't one of your staples at Market Basket.</p>
+            <span class="btn"><svg><use href="#i-plus"/></svg>Add “oat milk”</span>
+            <span class="lnk">Clear search</span>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>No search match.</b> Turns the miss into the add, with the name already filled in.</p>
+    </div>
+
+    <!-- FILTER NO MATCH -->
+    <div class="col sm">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:#4A3242"></i>Market Basket</span></div>
+          <h1 class="t">Pantry</h1>
+          <p class="sub1">Showing <b style="color:var(--f950)">On your list · Frozen</b></p>
+          <div class="empty" style="padding-top:18px">
+            <div class="eico"><svg><use href="#i-filterx"/></svg></div>
+            <h2>Nothing matches</h2>
+            <p>No frozen staples are on your list right now.</p>
+            <span class="btn">Clear filters</span>
+            <span class="lnk">Change filters</span>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>No filter match.</b> Says which filters are on and gives the way out as the main button.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- LIST EMPTY -->
+    <div class="col sm">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:#4A3242"></i>Market Basket</span></div>
+          <h1 class="t">List</h1>
+          <div class="empty">
+            <div class="eico"><svg><use href="#i-list"/></svg></div>
+            <h2>Nothing to buy here</h2>
+            <p>Tap the basket on a staple in your pantry and it shows up on this list.</p>
+            <span class="btn"><svg><use href="#i-pantry"/></svg>Check your pantry</span>
+            <span class="lnk">Add an item</span>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Empty List.</b> The $0.00 tag is hidden until there's something to total; the button sends you to the Pantry.</p>
+    </div>
+
+    <!-- ALL IN CART -->
+    <div class="col sm">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:#4A3242"></i>Market Basket</span></div>
+          <h1 class="t">List</h1>
+          <div class="empty">
+            <div class="eico" style="background:var(--butter)"><svg><use href="#i-cart"/></svg></div>
+            <h2>Everything's in the cart</h2>
+            <p>6 items · about $25.53. Finish to put them back in your pantry.</p>
+            <span class="btn">Finish shopping</span>
+            <span class="lnk">Add an item</span>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>All ticked.</b> When "To get" hits zero, Finish shopping becomes the main button on the page.</p>
+    </div>
+
+    <!-- RECEIPT -->
+    <div class="col sm">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:#4A3242"></i>Market Basket</span></div>
+          <h1 class="t">Receipt</h1>
+          <div class="empty">
+            <div class="eico"><svg><use href="#i-camera"/></svg></div>
+            <h2>Snap your receipt</h2>
+            <p>Lay it flat in good light. You check every match before a price changes.</p>
+            <span class="btn"><svg><use href="#i-camera"/></svg>Take a photo</span>
+            <span class="lnk">Choose from photos</span>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Receipt.</b> Same message as today, but as a clear empty state with a full-width primary button.</p>
+    </div>
+
+    <!-- SETTINGS + LOADING -->
+    <div class="col sm">
+      <div class="ph">
+        <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+        <div class="in">
+          <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span></div>
+          <h1 class="t">Settings</h1>
+          <div class="empty" style="padding-top:16px">
+            <div class="eico"><svg><use href="#i-store"/></svg></div>
+            <h2>More settings soon</h2>
+            <p>For now you can rename, recolour or add stores.</p>
+            <span class="btn">Manage stores</span>
+          </div>
+          <div style="margin-top:34px;opacity:.95">
+            <div class="note" style="text-align:left;margin:0 2px 8px">Loading state (any screen):</div>
+            <div class="grp" style="padding:4px 0">
+              <div class="r"><div class="sk" style="width:40px;height:40px"></div><div class="g"><div class="sk" style="width:60%;height:12px;margin-bottom:7px"></div><div class="sk" style="width:30%;height:10px"></div></div></div>
+              <div class="r"><div class="sk" style="width:40px;height:40px"></div><div class="g"><div class="sk" style="width:45%;height:12px;margin-bottom:7px"></div><div class="sk" style="width:25%;height:10px"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="cap"><b>Settings and loading.</b> Settings gets one real action until it's designed. Screens show skeleton rows instead of a blank page while data loads.</p>
+    </div>
+  </div>
+</div>
+</body></html>
