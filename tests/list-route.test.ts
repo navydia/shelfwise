@@ -6,8 +6,9 @@ async function setup() {
   const a = (await t.api.post('/api/stores').send({ name: 'Main', isMain: true })).body;
   const b = (await t.api.post('/api/stores').send({ name: 'Deli' })).body;
   const mk = async (name: string, storeId: number, patch: object) => {
-    const it = (await t.api.post('/api/items').send({ name, storeId })).body;
-    return (await t.api.patch(`/api/items/${it.id}`).send(patch)).body;
+    const { lastPriceCents, ...rest } = patch as { lastPriceCents?: number };
+    const it = (await t.api.post('/api/items').send({ name, storeId, lastPriceCents })).body;
+    return (await t.api.patch(`/api/items/${it.id}`).send(rest)).body;
   };
   return { ...t, a, b, mk };
 }

@@ -27,7 +27,7 @@ export function buildList(items: ListItem[], budgetCents: number | null): ListRe
     if (i.lastPriceCents === null) {
       unpriced.push({ ...i, lineCents: null });
     } else {
-      const lineCents = i.lastPriceCents * i.usualQty;
+      const lineCents = Math.round(i.lastPriceCents * i.usualQty);
       subtotalCents += lineCents;
       lines.push({ ...i, lineCents });
     }

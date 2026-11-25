@@ -6,6 +6,7 @@ import type { Db } from './db';
 import { storesRouter } from './routes/stores';
 import { categoriesRouter } from './routes/categories';
 import { itemsRouter } from './routes/items';
+import { sizesRouter } from './routes/sizes';
 import { listRouter } from './routes/list';
 import { receiptsRouter } from './routes/receipts';
 
@@ -26,6 +27,7 @@ export function createApp(db: Db, opts: AppOptions = {}): Express {
   app.use('/api/stores', listRouter(db));
   app.use('/api/categories', categoriesRouter(db));
   app.use('/api/items', itemsRouter(db, dataDir));
+  app.use('/api', sizesRouter(db));
   app.use('/api/receipts', receiptsRouter(db, dataDir, opts.readReceiptText));
   app.use(express.static(fileURLToPath(new URL('../public', import.meta.url))));
   app.use('/photos', express.static(path.join(dataDir, 'photos'), { maxAge: '30d', immutable: true }));

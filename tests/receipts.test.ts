@@ -51,13 +51,15 @@ describe('receipts API', () => {
     const firstLine = first.lines.find((l: { raw: string }) => l.raw === 'EGGS 3.99');
     await api.post(`/api/receipts/${first.id}/confirm`).send({ matches: [{ lineId: firstLine.id, itemId: eggs.id }] });
     const firstAt = (db.prepare('select created_at from receipts where id = ?').get(first.id) as { created_at: string }).created_at;
-    expect(await itemFrom()).toMatchObject({ lastPriceCents: 399, priceSource: 'receipt', priceDate: firstAt, onList: false });
-    const row = () => db.prepare('select price_receipt_id, changed_at from items where id = ?').get(eggs.id) as { price_receipt_id: number; changed_at: string };
+    expect(await itemFrom()).toMatchObject({ onList: false });
+    expect((await itemFrom()).sizes[0]).toMatchObject({ lastPriceCents: 399, priceSource: 'receipt', priceDate: firstAt });
+    const row = () => db.prepare('select s.price_receipt_id, i.changed_at from items i join sizes s on s.item_id = i.id and s.is_default = 1 where i.id = ?').get(eggs.id) as { price_receipt_id: number; changed_at: string };
     const afterFirst = row();
     expect(afterFirst.price_receipt_id).toBe(first.id);
 
-    await api.patch(`/api/items/${eggs.id}`).send({ lastPriceCents: 500 });
-    expect(await itemFrom()).toMatchObject({ lastPriceCents: 500, priceSource: 'manual' });
+    const sizeId = (await itemFrom()).sizes[0].id;
+    await api.patch(`/api/sizes/${sizeId}`).send({ lastPriceCents: 500 });
+    expect((await itemFrom()).sizes[0]).toMatchObject({ lastPriceCents: 500, priceSource: 'manual' });
 
     text = 'EGGS 4.25';
     await api.patch(`/api/items/${eggs.id}`).send({ onList: true });
@@ -65,7 +67,8 @@ describe('receipts API', () => {
     const secondLine = second.lines.find((l: { raw: string }) => l.raw === 'EGGS 4.25');
     await api.post(`/api/receipts/${second.id}/confirm`).send({ matches: [{ lineId: secondLine.id, itemId: eggs.id }] });
     const secondAt = (db.prepare('select created_at from receipts where id = ?').get(second.id) as { created_at: string }).created_at;
-    expect(await itemFrom()).toMatchObject({ lastPriceCents: 425, priceSource: 'receipt', priceDate: secondAt, onList: false });
+    expect(await itemFrom()).toMatchObject({ onList: false });
+    expect((await itemFrom()).sizes[0]).toMatchObject({ lastPriceCents: 425, priceSource: 'receipt', priceDate: secondAt });
     const afterSecond = row();
     expect(afterSecond.price_receipt_id).toBe(second.id);
     expect(afterSecond.changed_at).not.toBe(afterFirst.changed_at);
@@ -76,7 +79,7 @@ describe('receipts API', () => {
     const res = await api.post(`/api/receipts/${up.id}/confirm`).send({ matches: up.lines.map((l: { id: number }) => ({ lineId: l.id, itemId: null })) });
     expect(res.status).toBe(200);
     expect(db.prepare('select count(*) c from aliases').get()).toEqual({ c: 0 });
-    expect(db.prepare('select count(*) c from items where last_price_cents is not null').get()).toEqual({ c: 0 });
+    expect(db.prepare('select count(*) c from sizes where last_price_cents is not null').get()).toEqual({ c: 0 });
   });
   it('confirm_twice_returns_409', async () => {
     const { upload, api } = await setup();

@@ -5,11 +5,11 @@ import path from 'node:path';
 import { makeApp } from './helpers/app';
 
 describe('stores API', () => {
-  it('create_store_defaults_to_fig', async () => {
+  it('create_store_defaults_to_tomato', async () => {
     const { api } = makeApp();
     const res = await api.post('/api/stores').send({ name: 'Main' });
     expect(res.status).toBe(201);
-    expect(res.body.color).toBe('fig');
+    expect(res.body.color).toBe('tomato');
     const teal = await api.post('/api/stores').send({ name: 'Deli', color: 'teal' });
     expect(teal.body.color).toBe('teal');
   });
@@ -22,9 +22,9 @@ describe('stores API', () => {
   it('patch_store_colour_and_name', async () => {
     const { api } = makeApp();
     const s = (await api.post('/api/stores').send({ name: 'Main' })).body;
-    const res = await api.patch(`/api/stores/${s.id}`).send({ name: 'Market', color: 'forest' });
+    const res = await api.patch(`/api/stores/${s.id}`).send({ name: 'Market', color: 'green' });
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: s.id, name: 'Market', color: 'forest', isMain: false });
+    expect(res.body).toMatchObject({ id: s.id, name: 'Market', color: 'green', isMain: false });
     expect((await api.patch(`/api/stores/${s.id}`).send({ color: 'nope' })).status).toBe(400);
     expect((await api.patch('/api/stores/999').send({ name: 'X' })).status).toBe(404);
     await api.post('/api/stores').send({ name: 'Deli' });

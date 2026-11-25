@@ -15,9 +15,9 @@ async function call(method, path, body) {
 const categories = await call('GET', '/api/categories');
 const cat = (name) => categories.find((c) => c.name === name)?.id ?? null;
 
-const market = await call('POST', '/api/stores', { name: 'Market Basket', isMain: true, color: 'fig' });
+const market = await call('POST', '/api/stores', { name: 'Market Basket', isMain: true, color: 'berry' });
 const hmart = await call('POST', '/api/stores', { name: 'H Mart', color: 'teal' });
-const bakery = await call('POST', '/api/stores', { name: 'Bakery', color: 'claret' });
+const bakery = await call('POST', '/api/stores', { name: 'Bakery', color: 'tomato' });
 
 // [name, store, category, aisle, price cents, usual qty, on list]
 const items = [

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { transaction, type Db } from '../db';
 import { buildList } from '../lib/list';
 import { parseDollars } from '../lib/money';
-import { toItem, type ItemRow } from './items';
+import { sizesByItem, type ItemRow } from './items';
 
 export function listRouter(db: Db): Router {
   const r = Router();
@@ -11,9 +11,17 @@ export function listRouter(db: Db): Router {
       | { id: number; name: string; is_main: number; color: string } | undefined;
     if (!store) return res.status(404).json({ error: 'store not found' });
     const budgetCents = typeof req.query.budget === 'string' ? parseDollars(req.query.budget) : null;
-    const items = (db.prepare('select * from items where store_id = ? order by name collate nocase').all(store.id) as ItemRow[])
-      .map(toItem)
-      .map((i) => ({ id: i.id, name: i.name, photo: i.photo, usualQty: i.usualQty, lastPriceCents: i.lastPriceCents, onList: i.onList, categoryId: i.categoryId, aisle: i.aisle }));
+    // Minimal bridge until the sizes-aware list (task 2): price and amount come from the list size, else the default size.
+    const rows = db.prepare('select * from items where store_id = ? and archived_at is null order by name collate nocase').all(store.id) as ItemRow[];
+    const sizes = sizesByItem(db, rows.map((i) => i.id));
+    const items = rows.map((i) => {
+      const all = sizes.get(i.id) ?? [];
+      const size = all.find((s) => s.id === i.list_size_id) ?? all[0];
+      return {
+        id: i.id, name: i.name, photo: i.photo, usualQty: i.list_amount ?? size?.usual_amount ?? 1, lastPriceCents: size?.last_price_cents ?? null,
+        onList: i.on_list === 1, categoryId: i.category_id, aisle: i.aisle,
+      };
+    });
     res.json({ store: { id: store.id, name: store.name, isMain: store.is_main === 1, color: store.color }, budgetCents, ...buildList(items, budgetCents) });
   });
   r.post('/:id/finish', (req, res) => {

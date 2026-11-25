@@ -17,7 +17,7 @@ export function storesRouter(db: Db, dataDir: string): Router {
   r.post('/', (req, res) => {
     const name = String(req.body?.name ?? '').trim();
     if (!name) return res.status(400).json({ error: 'name required' });
-    const color = req.body?.color ?? 'fig';
+    const color = req.body?.color ?? 'tomato';
     if (!validColor(color)) return res.status(400).json({ error: 'unknown colour' });
     const isMain = req.body?.isMain ? 1 : 0;
     try {

@@ -42,7 +42,7 @@ create table if not exists receipt_lines (
 );
 `;
 
-export const STORE_COLORS = ['fig', 'claret', 'cinnamon', 'olive', 'forest', 'teal', 'harbor', 'slate'] as const;
+export const STORE_COLORS = ['tomato', 'pumpkin', 'berry', 'violet', 'blue', 'teal', 'green', 'slate'] as const;
 
 const SEED_CATEGORIES = ['Produce', 'Dairy & eggs', 'Meat & fish', 'Bakery', 'Pasta & grains', 'Oils & condiments', 'Canned & jarred', 'Baking', 'Snacks', 'Frozen', 'Drinks', 'Household'];
 
@@ -63,6 +63,44 @@ const MIGRATIONS: ((db: Db) => void)[] = [
       alter table stores add column color text not null default 'fig';
       update items set on_list = 1 where state in ('low','out');
       update items set changed_at = strftime('%Y-%m-%dT%H:%M:%fZ','now');
+    `);
+  },
+  (db) => {
+    db.exec(`
+      create table sizes (
+        id integer primary key,
+        item_id integer not null references items(id) on delete cascade,
+        name text not null default '',
+        sold_by text not null default 'each' check (sold_by in ('each','weight')),
+        last_price_cents integer,
+        price_source text check (price_source in ('receipt','manual')),
+        price_receipt_id integer references receipts(id) on delete set null,
+        price_updated_at text,
+        usual_amount real not null default 1,
+        is_default integer not null default 0,
+        sort integer not null default 0,
+        unique (item_id, name collate nocase)
+      );
+      create unique index sizes_one_default on sizes(item_id) where is_default = 1;
+      create table oneoffs (
+        id integer primary key,
+        store_id integer not null references stores(id) on delete cascade,
+        name text not null,
+        price_cents integer,
+        amount real not null default 1,
+        created_at text not null
+      );
+      alter table items add column emoji text;
+      alter table items add column archived_at text;
+      alter table items add column list_size_id integer references sizes(id) on delete set null;
+      alter table items add column list_amount real;
+      insert into sizes(item_id, name, sold_by, last_price_cents, price_source, price_receipt_id, price_updated_at, usual_amount, is_default, sort)
+        select id, '', 'each', last_price_cents, price_source, price_receipt_id, price_updated_at, usual_qty, 1, 0 from items;
+      update items set list_size_id = (select s.id from sizes s where s.item_id = items.id and s.is_default = 1) where on_list = 1;
+      update stores set color = case color
+        when 'fig' then 'berry' when 'claret' then 'tomato' when 'cinnamon' then 'pumpkin'
+        when 'olive' then 'green' when 'forest' then 'green' when 'teal' then 'teal'
+        when 'harbor' then 'blue' when 'slate' then 'slate' else 'tomato' end;
     `);
   },
 ];
