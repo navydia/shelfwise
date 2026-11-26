@@ -92,6 +92,9 @@ export async function runSave(states, { storeId, api, onItem }) {
       onItem?.(item);
       const size = item.sizes[0];
       s.choice = { itemId: item.id, sizeId: size.id, soldBy: size.soldBy }; s.created = true;
+      // What the owner typed wins over the receipt price that confirm writes (anti-goal). Kept for a retry.
+      const typed = draft.soldBy === 'weight' ? null : parsePrice(draft.priceText);
+      s.typed = typed && typed.ok ? { sizeId: size.id, name: draft.name, cents: typed.cents } : null;
       made++;
     } catch (err) {
       s.error = err.message; s.archivedId = err.status === 409 ? err.data?.archivedId ?? null : null;
@@ -99,5 +102,12 @@ export async function runSave(states, { storeId, api, onItem }) {
     }
   }
   try { await api.confirm(buildMatches(states)); } catch (err) { return { ok: false, stage: 'confirm', error: err.message, made }; }
-  return { ok: true, made };
+  // Confirm wrote each line's receipt price; put back any different price typed on a new staple.
+  const priceFailed = [];
+  for (const s of states) {
+    if (!s.typed || s.skipped) continue;
+    if (s.typed.cents === (s.line.priceCents ?? null)) { s.typed = null; continue; }
+    try { await api.patchSize(s.typed.sizeId, { lastPriceCents: s.typed.cents }); s.typed = null; } catch { priceFailed.push(s.typed.name); }
+  }
+  return priceFailed.length ? { ok: true, made, priceFailed } : { ok: true, made };
 }

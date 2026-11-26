@@ -79,4 +79,10 @@ describe('staple size drafts', () => {
     const drafts = [{ ...draftFrom(orig[0]), name: 'A' }, { ...blankSize(), name: 'N', isDefault: false }];
     expect(planSizeCalls(orig, drafts).map((c: any) => c.op)).toEqual(['remove', 'update', 'create']);
   });
+  it('new_default_is_created_before_the_old_default_is_removed', () => {
+    const orig = [sz(1, { isDefault: true }), sz(2, { name: 'B' })];
+    const drafts = [{ ...draftFrom(orig[1]), isDefault: false }, { ...blankSize(), name: 'N', isDefault: true }];
+    const plan = planSizeCalls(orig, drafts).map((c: any) => c.op + (c.id ?? ''));
+    expect(plan.indexOf('create')).toBeLessThan(plan.indexOf('remove1'));
+  });
 });

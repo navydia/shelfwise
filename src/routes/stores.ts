@@ -81,8 +81,11 @@ export function storesRouter(db: Db, dataDir: string): Router {
     const store = find(Number(req.params.id));
     if (!store) return res.status(404).json({ error: 'store not found' });
     if (store.is_main === 1) return res.status(409).json({ error: 'make another store main first' });
-    const { n } = db.prepare('select count(*) as n from items where store_id = ?').get(store.id) as { n: number };
-    if (n > 0) return res.status(409).json({ error: `Move or delete its ${n} staples first`, staples: n });
+    const { n, a } = db.prepare('select count(*) as n, coalesce(sum(archived_at is not null), 0) as a from items where store_id = ?').get(store.id) as { n: number; a: number };
+    if (n > 0) {
+      if (a > 0) return res.status(409).json({ error: `Move or delete its ${n} staples first (${a} ${a === 1 ? 'is' : 'are'} archived)`, staples: n, archived: a });
+      return res.status(409).json({ error: `Move or delete its ${n} staples first`, staples: n });
+    }
     const photos = (db.prepare('select photo from receipts where store_id = ? and photo is not null').all(store.id) as { photo: string }[])
       .map((p) => p.photo);
     transaction(db, () => {

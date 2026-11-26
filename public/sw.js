@@ -1,6 +1,6 @@
 // Shelfwise service worker: caches the app shell and saves recent read responses
 // so the list and prices still show with weak or no signal. Writes are never queued.
-const VERSION = 'v20';
+const VERSION = 'v21';
 const SHELL_CACHE = `shelfwise-shell-${VERSION}`;
 const DATA_CACHE = `shelfwise-data-${VERSION}`;
 const SHELL = [
@@ -74,6 +74,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.pathname === '/api/health') return; // never cached: About must reflect the network right now
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request, DATA_CACHE, true, API_TIMEOUT_MS));
   } else if (url.pathname.startsWith('/photos/')) {

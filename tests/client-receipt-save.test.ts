@@ -131,4 +131,36 @@ describe('runSave', () => {
     expect(r).toMatchObject({ ok: false, stage: 'confirm', made: 1 });
     expect((states[0] as any).choice.itemId).toBe(3);
   });
+  describe('typed price survives confirm', () => {
+    const run = async (draft: any, patchSize: any, lineCents = 598) => {
+      const st = [{ ...newState(1, draft), line: line(1, 'l', lineCents) }];
+      return runSave(st, { storeId: 1, api: { createItem: async () => made(5), confirm: async () => {}, patchSize } });
+    };
+    it('typed_equal_to_line_price_sends_no_patch', async () => {
+      const calls: any[] = [];
+      await run({ name: 'A', soldBy: 'each', priceText: '5.98' }, async (id: number, p: any) => { calls.push([id, p]); });
+      expect(calls).toEqual([]);
+    });
+    it('typed_different_price_is_patched_after_confirm', async () => {
+      const calls: any[] = [];
+      const r = await run({ name: 'A', soldBy: 'each', priceText: '2.99' }, async (id: number, p: any) => { calls.push([id, p]); });
+      expect(calls).toEqual([[50, { lastPriceCents: 299 }]]);
+      expect(r).toEqual({ ok: true, made: 1 });
+    });
+    it('blank_typed_price_patches_null', async () => {
+      const calls: any[] = [];
+      await run({ name: 'A', soldBy: 'each', priceText: '' }, async (id: number, p: any) => { calls.push([id, p]); });
+      expect(calls).toEqual([[50, { lastPriceCents: null }]]);
+    });
+    it('weight_drafts_are_never_patched', async () => {
+      const calls: any[] = [];
+      await run({ name: 'A', soldBy: 'weight', priceText: '' }, async (id: number, p: any) => { calls.push([id, p]); });
+      expect(calls).toEqual([]);
+    });
+    it('failed_patch_is_reported_by_name', async () => {
+      const r: any = await run({ name: 'Eggs', soldBy: 'each', priceText: '2.99' }, async () => { throw new Error('x'); });
+      expect(r.ok).toBe(true);
+      expect(r.priceFailed).toEqual(['Eggs']);
+    });
+  });
 });

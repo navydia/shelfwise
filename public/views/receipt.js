@@ -174,7 +174,8 @@ function showMatches(out, receipt, { items, itemById, categories, store, storeId
   // Alias matches start confirmed on the proposed size; guesses wait for a tap.
   const st = receipt.lines.map((line) => {
     const alias = line.reason === 'alias' && line.proposedItemId != null ? itemById.get(line.proposedItemId) : null;
-    const aliasSize = alias ? sizeFor(alias, line.proposedSizeId) : null;
+    // Only a one-size staple is matched for you; with several sizes you pick, so it waits under Needs a look.
+    const aliasSize = alias && (alias.sizes ?? []).length === 1 ? alias.sizes[0] : null;
     return { line, choice: aliasSize ? choiceOf(alias, aliasSize) : null, skipped: false, weightText: '', error: null, archivedId: null, created: false };
   });
   let banner = null; // a save problem that stays on screen until the next Save
@@ -289,7 +290,7 @@ function showMatches(out, receipt, { items, itemById, categories, store, storeId
     if (guess) kids.push(el('div', 'rc-ask', 'Best guess, not sure'));
     row.append(lineTop(s, el('i', 'flag'), kids));
     const acts = [];
-    if (guess && (guess.sizes ?? []).length) acts.push(['Yes', () => { s.choice = choiceOf(guess, sizeFor(guess, line.proposedSizeId)); draw(); }, `Yes, ${line.raw} is ${guess.name}`, 'yes']);
+    if (guess && (guess.sizes ?? []).length) acts.push(['Yes', () => pickFor(s, guess, line.proposedSizeId), `Yes, ${line.raw} is ${guess.name}`, 'yes']);
     acts.push(['Pick item', () => openPicker(items, (item) => pickFor(s, item, item.id === line.proposedItemId ? line.proposedSizeId : null), () => newStaple(s)), `Pick an item for ${line.raw}`]);
     acts.push(['New staple', () => newStaple(s), `New staple from ${line.raw}`]);
     acts.push(['Skip', () => { s.skipped = true; draw(); }, `Skip ${line.raw}`, 'skip']);
@@ -358,22 +359,23 @@ function showMatches(out, receipt, { items, itemById, categories, store, storeId
     out.querySelectorAll('button, input').forEach((n) => { n.disabled = true; }); // nothing changes under a save in flight
     let r;
     try {
-      r = await runSave(st, { storeId, api: { createItem: api.createItem, confirm: (m) => api.confirmReceipt(receipt.id, m) }, onItem: (item) => { items.push(item); itemById.set(item.id, item); } });
+      r = await runSave(st, { storeId, api: { createItem: api.createItem, patchSize: api.patchSize, confirm: (m) => api.confirmReceipt(receipt.id, m) }, onItem: (item) => { items.push(item); itemById.set(item.id, item); } });
     } finally { saving = false; }
     if (ctx.stale?.()) return;
-    if (r.ok) { showDone(resultSummary(st), st.filter((s) => s.created).length); return; }
+    if (r.ok) { showDone(resultSummary(st), st.filter((s) => s.created).length, r.priceFailed ?? []); return; }
     const kept = r.made ? ` ${plural(r.made, 'new staple')} created already ${r.made === 1 ? 'is' : 'are'} kept and matched.` : '';
     if (r.stage === 'plan') showBanner(r.error);
     else if (r.stage === 'create') showBanner(`Couldn't create "${r.name}", so no prices were saved.${kept} Fix the line marked below, then press Save again.`);
     else showBanner(`Prices were not saved: ${r.error}.${kept} Press Save to try again.`);
   }
 
-  function showDone({ updated, kept }, made) {
+  function showDone({ updated, kept }, made, priceFailed) {
     out.replaceChildren();
     retake.hidden = true;
     const done = el('div', 'rc-done');
     done.append(el('p', 'rc-done-h', `${plural(updated, 'price')} updated.`));
     if (made) done.append(el('p', 'sub', `${plural(made, 'new staple')} added to your Pantry.`));
+    if (priceFailed.length) done.append(el('p', 'msg rc-kept', `Couldn't save the price you typed for ${priceFailed.join(', ')}. ${priceFailed.length === 1 ? 'Its price is' : 'Their prices are'} the receipt price. Edit it in the Pantry.`));
     if (kept.length) {
       done.append(el('p', 'msg rc-kept', `${plural(kept.length, 'weighed item')} kept ${kept.length === 1 ? 'its' : 'their'} old price (no weight added):`));
       const ul = el('ul', 'rc-kept-list');

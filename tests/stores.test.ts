@@ -57,6 +57,17 @@ describe('stores API', () => {
     expect(res.status).toBe(409);
     expect(res.body).toEqual({ error: 'Move or delete its 2 staples first', staples: 2 });
   });
+  it('delete_store_409_says_how_many_are_archived', async () => {
+    const { api } = makeApp();
+    await api.post('/api/stores').send({ name: 'Main', isMain: true });
+    const b = (await api.post('/api/stores').send({ name: 'Deli' })).body;
+    await api.post('/api/items').send({ name: 'Olives', storeId: b.id });
+    const f = (await api.post('/api/items').send({ name: 'Feta', storeId: b.id })).body;
+    await api.patch(`/api/items/${f.id}`).send({ archived: true });
+    const res = await api.delete(`/api/stores/${b.id}`);
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Move or delete its 2 staples first (1 is archived)', staples: 2, archived: 1 });
+  });
   it('delete_main_store_409', async () => {
     const { api } = makeApp();
     const a = (await api.post('/api/stores').send({ name: 'Main', isMain: true })).body;

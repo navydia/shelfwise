@@ -73,5 +73,8 @@ export function planSizeCalls(original, drafts) {
   if (d.remove.length >= original.length) return [...creates, ...updates, ...removes];
   const promote = updates.filter((u) => u.patch.isDefault);
   const rest = updates.filter((u) => !u.patch.isDefault);
-  return [...promote, ...removes, ...rest, ...creates];
+  // A new default is created before any removal, so deleting the old default never lets the server pick its own heir.
+  const newDefault = creates.filter((c) => c.body.isDefault);
+  const otherCreates = creates.filter((c) => !c.body.isDefault);
+  return [...promote, ...newDefault, ...removes, ...rest, ...otherCreates];
 }
