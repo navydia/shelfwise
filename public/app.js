@@ -25,11 +25,18 @@ const toasts = document.createElement('div');
 toasts.className = 'toasts';
 toasts.setAttribute('aria-live', 'polite');
 document.body.append(toasts);
-export function toast(message) {
+// toast(message, { action: { label, run } }) adds a button (e.g. Undo) that runs once and closes the toast.
+export function toast(message, { action } = {}) {
   const el = document.createElement('div');
-  el.className = 'toast'; el.textContent = message;
+  el.className = 'toast';
+  el.append(Object.assign(document.createElement('span'), { textContent: message }));
+  if (action) {
+    const b = Object.assign(document.createElement('button'), { type: 'button', className: 'toast-act', textContent: action.label });
+    b.addEventListener('click', () => { el.remove(); action.run(); }, { once: true });
+    el.append(b);
+  }
   toasts.append(el);
-  setTimeout(() => el.remove(), 5000);
+  setTimeout(() => el.remove(), action ? 6000 : 5000);
 }
 
 const VIEW_TITLES = { pantry: 'Pantry', list: 'List', receipt: 'Receipt' };

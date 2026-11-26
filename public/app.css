@@ -54,6 +54,11 @@ h2, .label { font-family: var(--font-disp); font-weight: 700; font-size: 14px; c
 .sheet-x .ic { width: 22px; height: 22px; }
 .sheet-x:active { background: var(--sunken); }
 .sheet-head.bare { position: absolute; top: 8px; right: 18px; margin: 0; z-index: 1; }
+/* Grab bar: drag the sheet down to close it. The padding makes a bigger area to catch than the bar itself. */
+.sheet .handle { width: 38px; height: 5px; border-radius: 3px; background: #CFC6B8; margin: -6px auto 4px; box-sizing: content-box; padding: 4px 30px; background-clip: content-box; cursor: grab; }
+.sheet .sheet-head { cursor: grab; }
+.sheet.dragging { overflow: hidden; }
+.sheet.dragging, .sheet.dragging * { user-select: none; -webkit-user-select: none; }
 .sheet .btn-main { width: 100%; margin-top: 14px; }
 
 /* Cards, messages, first run */
@@ -188,7 +193,23 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .grp[hidden] { display: none; }
 .grp button:focus-visible, .grp a:focus-visible, .grp input:focus-visible { outline-offset: -3px; } /* the card clips overflow: keep rings inside */
 .grp .row { position: relative; margin: 0; border-radius: 0; background: transparent; box-shadow: none; padding: 10px 12px; min-height: 60px; gap: 12px; }
-.grp .row + .row::before { content: ''; position: absolute; top: 0; right: 0; left: 64px; border-top: 1px solid var(--line); }
+.grp .row + .row::before { content: ''; position: absolute; top: 0; right: 0; left: 64px; border-top: 1px solid var(--line); z-index: 2; }
+/* Swipeable rows: the content rides on a face over a coloured action layer. */
+.row.sw { position: relative; display: block; padding: 0; overflow: hidden; touch-action: pan-y; }
+.sw-face { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; padding: 10px 12px; min-height: 60px; background: var(--card); touch-action: pan-y; will-change: transform; }
+.row.swiping .sw-face { cursor: grabbing; }
+.row.swiping, .row.swiping * { user-select: none; -webkit-user-select: none; }
+.sw-bg { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 24px; }
+.sw-bg[data-side=left] { justify-content: flex-end; }
+.sw-bg[data-tone=butter] { background: var(--butter); color: var(--f950); }
+.sw-bg[data-tone=danger] { background: var(--paprika); color: #fff; }
+.sw-bg[data-tone=quiet] { background: var(--sunken); color: var(--f950); }
+.sw-bg i { display: grid; place-items: center; transform: scale(.82); opacity: .75; transition: transform .18s cubic-bezier(.3, 1.6, .5, 1), opacity .18s; }
+.sw-bg i .ic { width: 24px; height: 24px; stroke-width: 2.1; }
+.sw-bg.armed i { transform: scale(1.18); opacity: 1; }
+.row.folding { transition: height .2s ease; min-height: 0; }
+.row.folding::before { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .sw-bg i, .row.folding { transition: none; } }
 .row-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; padding: 0; background: transparent; text-align: left; border-radius: 10px; }
 .grp .thumb { width: 40px; height: 40px; border-radius: 10px; background: var(--sunken); }
 .row .info { min-width: 0; flex: 1; }
@@ -460,7 +481,10 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 
 /* Toasts: fixed, above sheets (31) and the tab bar. Fig 950 on Butter-light text for AA. */
 .toasts { position: fixed; left: 16px; right: 16px; top: calc(12px + env(safe-area-inset-top)); z-index: 60; display: grid; gap: 8px; pointer-events: none; }
-.toast { padding: 12px 14px; border-radius: 12px; background: var(--f950); color: var(--paper); font-size: 15px; box-shadow: 0 8px 20px rgba(30, 21, 25, .3); }
+.toast { padding: 12px 14px; border-radius: 12px; background: var(--f950); color: var(--paper); font-size: 15px; box-shadow: 0 8px 20px rgba(30, 21, 25, .3); display: flex; align-items: center; gap: 12px; }
+.toast span { flex: 1; min-width: 0; }
+.toast-act { pointer-events: auto; flex: none; min-height: var(--tap); margin: -12px -8px -12px 0; padding: 0 12px; border-radius: 10px; background: transparent; color: var(--butter); font-family: var(--font-disp); font-weight: 800; font-size: 15px; }
+.toast-act:active { background: rgba(255, 255, 255, .12); }
 
 /* Shopping List: size tag, one-off tag, price box, suggestions, line sheet */
 .row .nm .sz { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 6px; background: var(--sunken); color: var(--f900); font-size: 12.5px; font-weight: 700; vertical-align: 1px; }
