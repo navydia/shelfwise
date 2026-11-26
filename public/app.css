@@ -490,3 +490,6 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 body.kbd { padding-bottom: 55vh; }
 .amt-bad { margin: 4px 0 0; color: var(--marigold-text); font-weight: 600; }
 .amt-bad[hidden] { display: none; }
+
+.field[hidden] { display: none; }
+.rc-newbtn { width: 100%; margin-top: 8px; }

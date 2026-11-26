@@ -21,6 +21,7 @@ export function validateDraft(draft, takenNames) {
   const name = String(draft.name ?? '').trim();
   if (!name) return { ok: false, error: 'Give it a name.' };
   if (takenNames.some((n) => String(n).trim().toLowerCase() === name.toLowerCase())) return { ok: false, error: `A staple called "${name}" is already here.` };
+  if (draft.soldBy === 'weight') return { ok: true, priceCents: null };
   const price = parsePrice(draft.priceText);
   if (!price.ok) return { ok: false, error: 'Use a price like 3.49' };
   return { ok: true, priceCents: price.cents };
@@ -31,7 +32,7 @@ export function newStapleBody(draft, storeId) {
   const price = parsePrice(draft.priceText);
   const body = {
     name: String(draft.name).trim(), storeId,
-    sizes: [{ name: String(draft.sizeName ?? '').trim(), soldBy: draft.soldBy, lastPriceCents: price.ok ? price.cents : null, usualAmount: 1, isDefault: true }],
+    sizes: [{ name: String(draft.sizeName ?? '').trim(), soldBy: draft.soldBy, lastPriceCents: draft.soldBy === 'weight' || !price.ok ? null : price.cents, usualAmount: 1, isDefault: true }],
   };
   if (draft.categoryId != null) body.categoryId = draft.categoryId;
   return body;
@@ -74,4 +75,29 @@ export function buildMatches(states) {
 export function resultSummary(states) {
   const matched = states.filter((s) => s.choice && !s.skipped);
   return { updated: matched.filter(willUpdatePrice).length, kept: matched.filter((s) => !willUpdatePrice(s)) };
+}
+
+// Create the new staples, then confirm (Ruling 12). Each created staple becomes a real match at once, so a retry
+// never creates it twice, and nothing is confirmed unless every create worked.
+// api: { createItem(body), confirm(matches) }; onItem(item) lets the screen add it to its lists.
+export async function runSave(states, { storeId, api, onItem }) {
+  const plan = planSave(states);
+  if (plan.error) return { ok: false, stage: 'plan', error: plan.error, made: 0 };
+  let made = 0;
+  for (const s of plan.creates) {
+    const draft = s.choice.pending; // snapshot: the screen may change while the request is out
+    s.error = null; s.archivedId = null;
+    try {
+      const item = await api.createItem(newStapleBody(draft, storeId));
+      onItem?.(item);
+      const size = item.sizes[0];
+      s.choice = { itemId: item.id, sizeId: size.id, soldBy: size.soldBy }; s.created = true;
+      made++;
+    } catch (err) {
+      s.error = err.message; s.archivedId = err.status === 409 ? err.data?.archivedId ?? null : null;
+      return { ok: false, stage: 'create', error: err.message, name: draft.name, made };
+    }
+  }
+  try { await api.confirm(buildMatches(states)); } catch (err) { return { ok: false, stage: 'confirm', error: err.message, made }; }
+  return { ok: true, made };
 }

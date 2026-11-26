@@ -21,24 +21,28 @@ export function openNewStapleSheet({ line, draft, categories = [], takenNames = 
   const sizeName = el('input'); sizeName.type = 'text'; sizeName.autocomplete = 'off'; sizeName.maxLength = 40; sizeName.placeholder = 'Optional, like 5 oz can'; sizeName.value = d.sizeName ?? '';
   const price = el('input'); price.type = 'text'; price.inputMode = 'decimal'; price.autocomplete = 'off'; price.value = d.priceText ?? '';
   const priceLabel = el('span', '', 'Price');
+  let eachText = d.soldBy === 'weight' ? '' : (d.priceText ?? '');
   const hint = el('p', 'sub2 ns-hint');
 
   const seg = el('div', 'seg'); seg.setAttribute('role', 'radiogroup'); seg.setAttribute('aria-label', 'Sold by');
   const opts = [['each', 'Each'], ['weight', 'By weight']].map(([v, label]) => {
     const b = el('button', '', label); b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.v = v;
-    b.addEventListener('click', () => { d.soldBy = v; paintSold(); });
+    b.addEventListener('click', () => { if (d.soldBy === 'each') eachText = price.value; d.soldBy = v; paintSold(); });
     seg.append(b); return b;
   });
   function paintSold() {
     for (const b of opts) { const on = b.dataset.v === d.soldBy; b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); }
     const w = d.soldBy === 'weight';
-    priceLabel.textContent = w ? 'Price per lb' : 'Price';
-    hint.textContent = w ? 'The line price is the total for what you weighed. Add the weight on the line to work out the per-lb price.' : '';
+    // The line price is a total, so it is never shown as a per-lb price: a weight staple gets its price from the weight.
+    priceWrap.hidden = w;
+    price.value = w ? '' : eachText;
+    hint.textContent = w ? 'No price yet. Add the weight on the receipt line and the price per lb is worked out from it.' : '';
     hint.hidden = !w;
   }
 
+  const priceWrap = field(priceLabel, price);
   const soldWrap = el('div', 'field'); soldWrap.append(el('span', '', 'Sold by'), seg);
-  body.append(field('Name', name), field('Size name', sizeName), soldWrap, field(priceLabel, price), hint);
+  body.append(field('Name', name), field('Size name', sizeName), soldWrap, priceWrap, hint);
 
   let cat = null;
   if (categories.length) {
@@ -58,7 +62,7 @@ export function openNewStapleSheet({ line, draft, categories = [], takenNames = 
   revealOnFocus(body);
   body.addEventListener('submit', (e) => {
     e.preventDefault();
-    const next = { name: name.value.trim(), sizeName: sizeName.value.trim(), soldBy: d.soldBy, priceText: price.value.trim(), categoryId: cat && cat.value ? Number(cat.value) : null };
+    const next = { name: name.value.trim(), sizeName: sizeName.value.trim(), soldBy: d.soldBy, priceText: d.soldBy === 'weight' ? '' : price.value.trim(), categoryId: cat && cat.value ? Number(cat.value) : null };
     const v = validateDraft(next, takenNames);
     if (!v.ok) { msg.textContent = v.error; msg.hidden = false; return; }
     sheet.close();

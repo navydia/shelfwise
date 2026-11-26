@@ -7,7 +7,7 @@ import { skeletonRows } from '../ui/skeleton.js';
 import { fmt, priceParts } from '../lib/money.js';
 import { pickDefaultSize } from '../lib/sizes.js';
 import { sizeLabel } from '../lib/staple-sizes.js';
-import { draftFromLine, newStapleBody, planSave, buildMatches, resultSummary, willUpdatePrice, choiceSoldBy } from '../lib/receipt-save.js';
+import { draftFromLine, resultSummary, willUpdatePrice, choiceSoldBy, runSave, parseWeight } from '../lib/receipt-save.js';
 
 function el(tag, className, text) {
   const n = document.createElement(tag);
@@ -117,7 +117,7 @@ function openPicker(items, onPick, onNew) {
     const q = input.value.trim().toLowerCase();
     list.replaceChildren();
     const hits = items.filter((i) => !q || i.name.toLowerCase().includes(q));
-    if (!hits.length && items.length) list.append(el('p', 'empty', 'No staples match.'));
+    if (!hits.length && items.length) { list.append(el('p', 'empty', 'No staples match.')); const nb = el('button', 'btn-soft rc-newbtn', 'New staple'); nb.type = 'button'; nb.addEventListener('click', () => { sheet.close(); onNew(); }); list.append(nb); }
     else if (!items.length) {
       const es = emptyState({
         icon: 'basket-add', title: 'This store has no staples yet',
@@ -130,7 +130,7 @@ function openPicker(items, onPick, onNew) {
       const b = el('button', 'row rc-opt'); b.type = 'button';
       b.append(el('span', 'nm', i.name));
       const sizes = i.sizes ?? [];
-      const sub = sizes.length > 1 ? plural(sizes.length, 'size') : sizes[0]?.lastPriceCents != null ? fmt(sizes[0].lastPriceCents) : '';
+      const sub = sizes.length > 1 ? plural(sizes.length, 'size') : sizes[0]?.lastPriceCents != null ? `${fmt(sizes[0].lastPriceCents)}${sizes[0].soldBy === 'weight' ? '/lb' : ''}` : '';
       if (sub) b.append(el('span', 'sub', sub));
       b.addEventListener('click', () => { sheet.close(); onPick(i); });
       list.append(b);
@@ -174,7 +174,8 @@ function showMatches(out, receipt, { items, itemById, categories, store, storeId
   // Alias matches start confirmed on the proposed size; guesses wait for a tap.
   const st = receipt.lines.map((line) => {
     const alias = line.reason === 'alias' && line.proposedItemId != null ? itemById.get(line.proposedItemId) : null;
-    return { line, choice: alias ? choiceOf(alias, sizeFor(alias, line.proposedSizeId)) : null, skipped: false, weightText: '', error: null, archivedId: null, created: false };
+    const aliasSize = alias ? sizeFor(alias, line.proposedSizeId) : null;
+    return { line, choice: aliasSize ? choiceOf(alias, aliasSize) : null, skipped: false, weightText: '', error: null, archivedId: null, created: false };
   });
   let banner = null; // a save problem that stays on screen until the next Save
   const total = receipt.lines.reduce((s, l) => s + (l.priceCents ?? 0), 0);
@@ -311,7 +312,11 @@ function showMatches(out, receipt, { items, itemById, categories, store, storeId
       input.dataset.wkey = String(s.line.id);
       label.append(input);
       const note = el('span', 'rc-wn');
-      const paintNote = () => { const keep = !willUpdatePrice(s); note.textContent = keep ? NOT_UPDATED : 'Price per lb will be updated.'; note.classList.toggle('warn', keep); };
+      const paintNote = () => {
+        const keep = !willUpdatePrice(s);
+        note.textContent = !parseWeight(s.weightText).ok ? 'Enter pounds like 2.5' : !keep ? 'Price per lb will be updated.' : (s.choice.pending || s.created) ? 'No price yet — add the weight' : NOT_UPDATED;
+        note.classList.toggle('warn', keep);
+      };
       input.addEventListener('input', () => { s.weightText = input.value; paintNote(); });
       paintNote();
       wrap.append(label, note);
@@ -341,44 +346,26 @@ function showMatches(out, receipt, { items, itemById, categories, store, storeId
   }
 
   let saving = false;
+  const showBanner = (text) => {
+    banner = text; draw();
+    out.querySelector('.rc-banner')?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    toast(text);
+  };
   async function onSave(btn) {
     if (saving) return;
     banner = null;
-    const plan = planSave(st);
-    if (plan.error) { banner = plan.error; draw(); window.scrollTo?.({ top: 0, behavior: 'smooth' }); return; }
-    saving = true; btn.disabled = true; btn.textContent = 'Saving…';
-    // New staples first (Ruling 12). Each one that is created becomes a real match straight away, so a retry after
-    // a later failure never creates it twice. Nothing is confirmed until every create has worked.
-    let made = 0;
-    for (const s of plan.creates) {
-      s.error = null; s.archivedId = null;
-      try {
-        const item = await api.createItem(newStapleBody(s.choice.pending, storeId));
-        items.push(item); itemById.set(item.id, item);
-        const size = item.sizes[0];
-        s.choice = { itemId: item.id, sizeId: size.id, soldBy: size.soldBy }; s.created = true;
-        made++;
-      } catch (err) {
-        saving = false;
-        if (ctx.stale?.()) return;
-        s.error = err.message; s.archivedId = err.status === 409 ? err.data?.archivedId ?? null : null;
-        banner = `Couldn't create "${s.choice.pending.name}", so no prices were saved. ${made ? `${plural(made, 'new staple')} created so far will be kept and matched. ` : ''}Fix the line marked below, then press Save again.`;
-        draw();
-        return;
-      }
-    }
+    saving = true; btn.textContent = 'Saving…';
+    out.querySelectorAll('button, input').forEach((n) => { n.disabled = true; }); // nothing changes under a save in flight
+    let r;
     try {
-      await api.confirmReceipt(receipt.id, buildMatches(st));
-    } catch (err) {
-      saving = false;
-      if (ctx.stale?.()) return;
-      banner = `Prices were not saved: ${err.message}.${made ? ` ${plural(made, 'new staple')} created already ${made === 1 ? 'is' : 'are'} kept and matched.` : ''} Press Save to try again.`;
-      draw();
-      return;
-    }
-    saving = false;
+      r = await runSave(st, { storeId, api: { createItem: api.createItem, confirm: (m) => api.confirmReceipt(receipt.id, m) }, onItem: (item) => { items.push(item); itemById.set(item.id, item); } });
+    } finally { saving = false; }
     if (ctx.stale?.()) return;
-    showDone(resultSummary(st), st.filter((s) => s.created).length);
+    if (r.ok) { showDone(resultSummary(st), st.filter((s) => s.created).length); return; }
+    const kept = r.made ? ` ${plural(r.made, 'new staple')} created already ${r.made === 1 ? 'is' : 'are'} kept and matched.` : '';
+    if (r.stage === 'plan') showBanner(r.error);
+    else if (r.stage === 'create') showBanner(`Couldn't create "${r.name}", so no prices were saved.${kept} Fix the line marked below, then press Save again.`);
+    else showBanner(`Prices were not saved: ${r.error}.${kept} Press Save to try again.`);
   }
 
   function showDone({ updated, kept }, made) {

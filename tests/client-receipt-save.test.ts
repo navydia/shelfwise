@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 // @ts-ignore plain JS module
-import { parseWeight, validateDraft, newStapleBody, draftFromLine, willUpdatePrice, planSave, buildMatches, resultSummary } from '../public/lib/receipt-save.js';
+import { parseWeight, validateDraft, newStapleBody, draftFromLine, willUpdatePrice, planSave, buildMatches, resultSummary, runSave } from '../public/lib/receipt-save.js';
 
 const line = (id: number, raw = 'x', priceCents = 100) => ({ id, raw, priceCents });
 const itemState = (id: number, itemId: number, sizeId: number, soldBy = 'each', weightText = '') =>
@@ -82,5 +82,53 @@ describe('resultSummary', () => {
     const r = resultSummary([itemState(1, 5, 11), itemState(2, 6, 12, 'weight', ''), itemState(3, 7, 13, 'weight', '1.5')]);
     expect(r.updated).toBe(2);
     expect(r.kept.map((s: any) => s.line.id)).toEqual([2]);
+  });
+});
+
+describe('weight staples never take the line total as a per-lb price', () => {
+  it('weight_body_has_no_price', () => {
+    const b = newStapleBody({ name: 'Grapes', sizeName: '', soldBy: 'weight', priceText: '4.99', categoryId: null }, 1);
+    expect(b.sizes[0].lastPriceCents).toBeNull();
+  });
+  it('each_body_keeps_line_total', () => {
+    expect(newStapleBody({ name: 'Bread', sizeName: '', soldBy: 'each', priceText: '5.44', categoryId: null }, 1).sizes[0].lastPriceCents).toBe(544);
+  });
+  it('weight_draft_validates_without_a_price', () => {
+    expect(validateDraft({ name: 'Grapes', priceText: 'junk', soldBy: 'weight' }, []).ok).toBe(true);
+  });
+});
+
+describe('runSave', () => {
+  const made = (id: number) => ({ id, sizes: [{ id: id * 10, soldBy: 'each' }] });
+  it('creates_then_confirms', async () => {
+    const calls: string[] = [];
+    const states = [newState(1, { name: 'A', soldBy: 'each', priceText: '1.00' }), itemState(2, 9, 90)];
+    const r = await runSave(states, { storeId: 1, api: { createItem: async (b: any) => { calls.push('create ' + b.name); return made(5); }, confirm: async (m: any) => { calls.push('confirm ' + m.length); } } });
+    expect(r).toEqual({ ok: true, made: 1 });
+    expect(calls).toEqual(['create A', 'confirm 2']);
+  });
+  it('failed_create_confirms_nothing_and_retry_does_not_duplicate', async () => {
+    const created: string[] = []; let confirms = 0; let failB = true;
+    const createItem = async (b: any) => {
+      if (b.name === 'B' && failB) throw Object.assign(new Error('taken'), { status: 409, data: { archivedId: 77 } });
+      created.push(b.name); return made(created.length);
+    };
+    const api = { createItem, confirm: async () => { confirms++; } };
+    const states = [newState(1, { name: 'A', soldBy: 'each', priceText: '' }), newState(2, { name: 'B', soldBy: 'each', priceText: '' })];
+    const r1 = await runSave(states, { storeId: 1, api });
+    expect(r1).toMatchObject({ ok: false, stage: 'create', name: 'B', made: 1 });
+    expect(confirms).toBe(0);
+    expect((states[1] as any).archivedId).toBe(77);
+    failB = false;
+    const r2 = await runSave(states, { storeId: 1, api });
+    expect(r2.ok).toBe(true);
+    expect(created).toEqual(['A', 'B']);
+    expect(confirms).toBe(1);
+  });
+  it('confirm_failure_keeps_created_staples_matched', async () => {
+    const states = [newState(1, { name: 'A', soldBy: 'each', priceText: '' })];
+    const r = await runSave(states, { storeId: 1, api: { createItem: async () => made(3), confirm: async () => { throw new Error('offline'); } } });
+    expect(r).toMatchObject({ ok: false, stage: 'confirm', made: 1 });
+    expect((states[0] as any).choice.itemId).toBe(3);
   });
 });
