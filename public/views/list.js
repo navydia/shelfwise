@@ -17,6 +17,7 @@ import { parsePrice, suggestStaples, findStaple, lineTotalCents, statusFor } fro
 import { openLineSheet } from './line-sheet.js';
 import { openListSettings, GROUP_BY } from './list-settings.js';
 import { openSizePicker } from './size-picker.js';
+import { attachSwipe } from '../ui/swipe-row.js';
 
 const BY_LABEL = { aisle: 'By aisle', category: 'By category', none: 'No grouping' };
 const groupKey = (storeId) => `sw-group-${storeId}`;
@@ -242,7 +243,34 @@ export async function renderList(root, ctx) {
     if (unpricedOneoff) row.append(priceBox(l, sub));
     else if (l.lineCents != null) main.append(el('span', 'rprice', fmt(l.lineCents)));
     else { const d = el('span', 'dash', '–'); d.setAttribute('aria-hidden', 'true'); main.append(d); }
+    // Swipe right: tick (or untick). Swipe left: take a staple off the list, or delete a one-off, with Undo.
+    attachSwipe(row, {
+      right: { icon: 'check', tone: ticked ? 'quiet' : 'butter', run: () => { api.trips.toggle(storeId, lineKey(l)); drawLive(); } },
+      left: { icon: oneoff ? 'trash' : 'close', tone: 'danger', leave: true, run: () => removeLine(l) },
+    });
     return row;
+  }
+
+  // Off the list from a swipe. The row has already folded away; the list reloads so the total is right.
+  async function removeLine(l) {
+    const oneoff = l.kind === 'oneoff';
+    try {
+      if (oneoff) await api.deleteOneoff(l.id);
+      else await api.patchItem(l.id, { onList: false });
+    } catch (err) { toast(err.message); redraw(); return; }
+    redraw();
+    toast(oneoff ? `Deleted ${l.name}.` : `${l.name} is off the list.`, {
+      action: {
+        label: 'Undo',
+        run: async () => {
+          try {
+            if (oneoff) await api.createOneoff(storeId, { name: l.name, priceCents: l.unitPriceCents, amount: l.amount });
+            else await api.patchItem(l.id, { onList: true, listSizeId: l.sizeId });
+          } catch (err) { toast(err.message); }
+          redraw();
+        },
+      },
+    });
   }
 
   function drawPill(n) {

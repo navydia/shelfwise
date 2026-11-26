@@ -12,6 +12,7 @@ import { titleRow } from '../ui/title-row.js';
 import { openFilterSheet, defaultSort } from './filter-sheet.js';
 import { openStapleSheet } from './staple-sheet.js';
 import { openSizePicker } from './size-picker.js';
+import { attachSwipe } from '../ui/swipe-row.js';
 import { openPantrySettings } from './pantry-settings.js';
 
 const FILTER_KEY = 'sw-pantry-filter';
@@ -139,7 +140,8 @@ export async function renderPantry(root, ctx) {
       paintDetail(sub, item, flatAll);
     };
     let busy = false;
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => toggleList());
+    async function toggleList() {
       if (busy) return;
       // Several sizes: ask which one this time. One size goes straight on the list.
       if (!item.onList && item.sizes.length > 1) {
@@ -152,10 +154,30 @@ export async function renderPantry(root, ctx) {
       try { Object.assign(item, await api.patchItem(item.id, { onList: want })); paint(); }
       catch (err) { item.onList = !want; paint(); toast(err.message); }
       finally { busy = false; }
-    });
+    }
     paint();
     row.append(main, btn);
+    // Swipe right: on or off the list (the size picker for several sizes). Swipe left: archive, with Undo.
+    attachSwipe(row, {
+      right: { icon: () => (item.onList ? 'basket-on' : 'basket-add'), tone: () => (item.onList ? 'quiet' : 'butter'), run: toggleList },
+      left: { icon: 'archive', tone: 'danger', leave: true, run: () => archive(item) },
+    });
     return row;
+  }
+
+  async function archive(item) {
+    try { await api.patchItem(item.id, { archived: true }); }
+    catch (err) { toast(err.message); redraw(); return; }
+    redraw();
+    toast(`Archived ${item.name}.`, {
+      action: {
+        label: 'Undo',
+        run: async () => {
+          try { await api.patchItem(item.id, { archived: false }); } catch (err) { toast(err.message); }
+          redraw();
+        },
+      },
+    });
   }
 
   function resetFilters() {
