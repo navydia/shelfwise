@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shelfwise: sizes, one-offs, navigation</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Figtree:wght@400;500;600;700;800&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F2EEE6;--card:#FBF9F5;--line:#E4DED3;--stone:#6E675D;--pebble:#8F887D;--f950:#1E1519;--f900:#2C2027;--fig:#4A3242;--fig2:#5E4656;--butter:#E8CC7A;--sunken:#E9E3D8;--marigold:#B27A34;--mtext:#7D5D14;
+--tomato:#D2452F;--pumpkin:#C2620F;--berry:#C0306E;--violet:#7A4FD0;--blue:#2F6FD6;--teal:#0E8A86;--green:#3E8E2F;--slate:#5E6B7D;
+--lift:0 1px 2px rgba(30,21,25,.07),inset 0 1px 0 #fff;--sans:'Figtree',system-ui,sans-serif;--brand:'Bricolage Grotesque',sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:#1c1a1d;color:#ECE7DF;font-family:var(--sans);padding:24px 16px 60px}
+h2{font-size:24px;margin:0 0 6px}h3{font-size:18px;margin:34px 0 4px}
+.lede{opacity:.85;max-width:900px;line-height:1.55;font-size:14.5px;margin:4px 0}
+.row{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;margin:18px 0 6px}
+.col{width:375px;max-width:100%}
+.cap{font-size:13px;opacity:.85;margin:12px 4px 0;line-height:1.55}
+.cap ul{margin:6px 0 0;padding-left:18px}.cap li{margin:3px 0}
+.ph{width:375px;max-width:100%;height:780px;border-radius:44px;border:10px solid #141012;overflow:clip;position:relative;background:var(--paper);color:var(--f900);box-shadow:0 18px 40px rgba(0,0,0,.25)}
+.sb{height:40px;display:flex;justify-content:space-between;align-items:center;padding:0 26px;font-size:13px;font-weight:600;color:var(--f950)}
+.in{padding:2px 18px 0}
+.wm{font-family:var(--brand);font-weight:800;font-size:23px;letter-spacing:-.045em;color:var(--f950)}
+.wm .i{position:relative}.wm .i::before{content:'';position:absolute;left:52%;top:.1em;width:.27em;height:.17em;transform:translateX(-50%) rotate(-8deg);border-radius:.04em .08em .08em .04em;background:var(--butter);box-shadow:0 0 0 1px var(--f950)}
+.hdr{display:flex;align-items:center;gap:8px;height:40px}.hdr .wm{margin-right:auto}
+.pill{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;background:var(--card);padding:8px 12px;border-radius:999px;box-shadow:var(--lift)}
+.gear{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--card);box-shadow:var(--lift);color:var(--f900)}
+.dot{width:10px;height:10px;border-radius:3px;flex:none}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+h1{font-weight:800;font-size:30px;letter-spacing:-.025em;color:var(--f950);margin:16px 0 12px;line-height:1.1}
+.tag{background:var(--butter);color:var(--f950);border-radius:8px 18px 18px 8px;padding:12px 16px 12px 30px;position:relative;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 2px rgba(30,21,25,.12),inset 0 1px 0 rgba(255,255,255,.45)}
+.tag::before{content:'';position:absolute;left:11px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--paper)}
+.tagp{font-family:var(--brand);font-weight:800;letter-spacing:-.04em;font-size:42px;line-height:.9;display:inline-flex;align-items:flex-start}.tagp sup{font-size:.45em;margin-top:.12em;margin-left:2px}.tagp .d{font-size:.5em;margin-top:.1em}
+.tag .side{text-align:right;font-size:13px;line-height:1.4}.tag .side b{display:block;font-size:14px}
+.meta{display:flex;justify-content:space-between;align-items:center;margin:16px 2px 0;font-size:14.5px;color:var(--stone)}.meta b{color:var(--f950)}.meta a{color:var(--fig);font-weight:700}
+.ghd{display:flex;align-items:baseline;gap:8px;margin:20px 2px 8px;font-weight:700;font-size:15px;color:var(--f950)}.ghd .ct{margin-left:auto;font-size:13px;color:var(--stone);font-weight:500}
+.grp{background:var(--card);border-radius:16px;box-shadow:var(--lift);overflow:hidden}
+.r{display:flex;align-items:center;gap:12px;padding:10px 12px;min-height:56px;position:relative}
+.r+.r::before{content:'';position:absolute;top:0;right:0;left:50px;border-top:1px solid var(--line)}
+.pan .r+.r::before{left:64px}
+.th{width:40px;height:40px;border-radius:10px;background:var(--sunken);display:grid;place-items:center;font-size:22px;flex:none}
+.g{flex:1;min-width:0}.n{font-weight:600;font-size:16px;color:var(--f950);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.s{font-size:14px;color:var(--stone);line-height:1.4}.s b{color:var(--fig2)}
+.sz{display:inline-block;font-size:12.5px;font-weight:700;color:var(--f900);background:var(--sunken);border-radius:6px;padding:1px 7px;margin-left:6px;vertical-align:1px}
+.pr{font-weight:600;font-size:16px;color:var(--f950);font-variant-numeric:tabular-nums}
+.tk{width:26px;height:26px;border-radius:50%;border:2px solid var(--pebble);flex:none}
+.tk.on{background:var(--f900);border-color:var(--f900);display:grid;place-items:center}.tk.on::after{content:'';width:6px;height:11px;border:2.5px solid var(--butter);border-top:0;border-left:0;transform:rotate(45deg) translate(-1px,-1px)}
+.done .n{text-decoration:line-through;color:var(--stone);font-weight:500}.done .pr{color:var(--stone)}
+.oneoff{font-size:12px;font-weight:700;color:var(--stone);border:1.5px dashed var(--pebble);border-radius:6px;padding:0 6px;margin-left:6px}
+.qp{display:flex;align-items:center;gap:4px;height:34px;border-radius:10px;border:1.5px solid var(--pebble);padding:0 10px;font-weight:600;font-size:15px;color:var(--stone);background:var(--paper)}
+.qp.focus{border-color:var(--fig);color:var(--f950);box-shadow:0 0 0 3px rgba(74,50,66,.15)}
+.addrow{display:flex;align-items:center;gap:10px;padding:14px 12px;color:var(--fig);font-weight:700;font-size:15.5px}
+.bk{width:44px;height:44px;display:grid;place-items:center;flex:none;color:var(--fig2);margin-right:-6px}
+.bk.on i{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--butter);color:var(--fig)}
+.shd{display:flex;align-items:center;gap:9px;margin:22px 2px 10px}.shd .nm{font-weight:700;font-size:17px;color:var(--f950)}.shd .ct{font-size:14px;color:var(--stone)}
+.search{display:flex;align-items:center;gap:10px;height:46px;border-radius:14px;background:var(--card);padding:0 12px;color:var(--stone);font-size:15.5px;box-shadow:var(--lift);flex:1}
+.addbtn{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--f950);color:var(--butter);flex:none}
+.find{display:flex;gap:10px}
+/* nav */
+.dock{position:absolute;left:14px;right:14px;bottom:22px;display:flex;align-items:center;gap:10px;z-index:5}
+.glass{background:rgba(251,249,245,.8);-webkit-backdrop-filter:blur(14px) saturate(170%);backdrop-filter:blur(14px) saturate(170%);border:1px solid rgba(255,255,255,.75);box-shadow:inset 0 1px 0 rgba(255,255,255,.9),0 10px 28px rgba(30,21,25,.18),0 1px 3px rgba(30,21,25,.12)}
+.tabs{height:62px;border-radius:31px;display:flex;align-items:center;padding:0 5px;gap:2px}
+.tabs span{width:72px;height:52px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border-radius:26px;font-weight:600;font-size:11.5px;color:#4E4741;position:relative}
+.tabs svg{width:22px;height:22px}.tabs .on{color:var(--f950);background:rgba(74,50,66,.11)}
+.badge{position:absolute;top:4px;left:41px;min-width:20px;height:20px;border-radius:10px;background:var(--f950);color:var(--butter);font-size:11.5px;font-weight:800;display:grid;place-items:center;padding:0 5px;box-shadow:0 0 0 2px var(--card)}
+.fab{margin-left:auto;height:56px;padding:0 16px 0 14px;flex:none;border-radius:28px;background:var(--f950);color:var(--butter);display:flex;align-items:center;gap:8px;font-weight:700;font-size:15.5px;box-shadow:0 8px 20px rgba(30,21,25,.3),inset 0 1px 0 rgba(255,255,255,.12)}
+.fab svg{width:21px;height:21px}
+.fin{margin-left:auto;height:46px;padding:0 8px 0 18px;border-radius:23px;background:var(--f950);color:var(--butter);display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;box-shadow:0 6px 16px rgba(30,21,25,.28)}
+.fin i{font-style:normal;min-width:28px;height:28px;border-radius:14px;background:var(--butter);color:var(--f950);display:grid;place-items:center;font-size:13px}
+.fade{position:absolute;left:0;right:0;bottom:0;height:120px;background:linear-gradient(rgba(242,238,230,0),var(--paper) 70%);z-index:4;pointer-events:none}
+/* sheets */
+.dim{position:absolute;inset:0;background:rgba(30,21,25,.38);z-index:6}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:28px 28px 0 0;z-index:7;padding:10px 18px 26px}
+.handle{width:38px;height:5px;border-radius:3px;background:#D9D2C6;margin:0 auto 12px}
+.sheet h4{font-weight:800;font-size:22px;color:var(--f950);margin:0 0 4px;letter-spacing:-.015em}
+.sheet .sub2{font-size:14px;color:var(--stone);margin:0 0 14px}
+.opt{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;background:var(--paper);margin-bottom:8px}
+.opt.sel{box-shadow:inset 0 0 0 2px var(--f950);background:var(--card)}
+.opt .radio{width:22px;height:22px;border-radius:50%;border:2px solid var(--pebble);flex:none}
+.opt.sel .radio{border:7px solid var(--f950)}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;height:50px;border-radius:14px;background:var(--f950);color:var(--butter);font-weight:700;font-size:16px;width:100%;margin-top:8px;box-shadow:0 2px 4px rgba(30,21,25,.22),inset 0 1px 0 rgba(255,255,255,.12)}
+.lnk{color:var(--fig);font-weight:700;font-size:15px;text-align:center;padding:12px 0 0}
+.sec{font-weight:700;font-size:14px;color:var(--stone);margin:16px 2px 8px}
+.srow{display:flex;align-items:center;gap:12px;padding:13px 14px;min-height:50px;position:relative;font-size:15.5px;color:var(--f950)}
+.srow+.srow::before{content:'';position:absolute;top:0;right:0;left:14px;border-top:1px solid var(--line)}
+.srow .v{margin-left:auto;color:var(--stone);font-size:14.5px;display:flex;align-items:center;gap:6px}
+.chev{color:var(--pebble)}
+.seg{display:flex;background:var(--paper);border-radius:10px;padding:3px;gap:2px;margin-left:auto}
+.seg span{padding:6px 10px;border-radius:8px;font-size:13.5px;font-weight:600;color:var(--stone)}.seg .on{background:var(--card);color:var(--f950);box-shadow:var(--lift)}
+.sw{width:46px;height:28px;border-radius:14px;background:var(--fig);position:relative;margin-left:auto;flex:none}.sw::after{content:'';position:absolute;right:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff}
+.danger{color:#A65340}
+.field{margin-bottom:12px}.field label{display:block;font-weight:700;font-size:14px;color:var(--f950);margin-bottom:6px}
+.inp{height:46px;border-radius:12px;background:var(--paper);display:flex;align-items:center;padding:0 12px;color:var(--f950);font-size:15.5px;gap:6px}
+.inp.focus{box-shadow:0 0 0 2px var(--fig);background:var(--card)}
+.two{display:flex;gap:10px}.two>div{flex:1}
+/* receipt */
+.back{display:flex;align-items:center;gap:4px;color:var(--fig);font-weight:700;font-size:15.5px;height:40px}
+.rsum{display:flex;gap:12px;align-items:center;background:var(--card);border-radius:16px;padding:12px;box-shadow:var(--lift)}
+.paper{width:40px;height:52px;border-radius:4px;background:repeating-linear-gradient(#fff 0 5px,#ece6da 5px 6px);border:1px solid var(--line);flex:none}
+.rl{padding:12px 14px;position:relative}.rl+.rl::before{content:'';position:absolute;top:0;right:0;left:14px;border-top:1px solid var(--line)}
+.raw{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--stone);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.45;overflow-wrap:anywhere}
+.rtop{display:flex;gap:10px;align-items:flex-start}.rtop .g{min-width:0}
+.acts{display:flex;gap:16px;margin-top:8px}.acts span{font-weight:700;font-size:14.5px;color:var(--fig);padding:4px 0}
+.flag{width:8px;height:8px;border-radius:50%;background:var(--marigold);margin-top:6px;flex:none}
+.savebar{position:absolute;left:0;right:0;bottom:0;padding:12px 18px 30px;background:linear-gradient(rgba(242,238,230,0),var(--paper) 30%);z-index:5}
+.kb{position:absolute;left:0;right:0;bottom:0;height:250px;background:#D2CCC3;z-index:8;display:grid;place-items:center;color:#7a736a;font-size:13px}
+.pal{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.pc{background:#F2EEE6;color:#1E1519;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;min-width:170px;font-size:14px}
+.pc .dot{width:16px;height:16px;border-radius:5px}.pc small{color:#6E675D;margin-left:auto}
+@media (max-width:760px){.col{width:100%}.ph{width:100%}}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute"><defs>
+<symbol id="i-pantry" viewBox="0 0 24 24"><path d="M7 4h10M8 4v2a3 3 0 0 0-2 3v9a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a3 3 0 0 0-2-3V4"/><path d="M6 13h12"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2"/><circle cx="5" cy="18" r="1"/></symbol>
+<symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M4.2 6.5l2.6 1.5M17.2 16l2.6 1.5M4.2 17.5l2.6-1.5M17.2 8l2.6-1.5"/></symbol>
+<symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></symbol>
+<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="M10 7l5 5-5 5"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="M14 7l-5 5 5 5"/></symbol>
+<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+<symbol id="i-filter" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
+<symbol id="b-add" viewBox="0 0 24 24"><path d="M3.5 9.5h17l-1.6 9.1a2 2 0 0 1-2 1.7H7.1a2 2 0 0 1-2-1.7z"/><path d="M8 9.5l2.5-5M16 9.5l-2.5-5"/><path d="M12 12.5v5M9.5 15h5"/></symbol>
+<symbol id="b-on" viewBox="0 0 24 24"><path d="M3.5 9.5h17l-1.6 9.1a2 2 0 0 1-2 1.7H7.1a2 2 0 0 1-2-1.7z"/><path d="M8 9.5l2.5-5M16 9.5l-2.5-5"/><path d="M9.3 15l2 2 3.6-3.8"/></symbol>
+</defs></svg>
+
+<h2>Sizes, one-offs, two-tab navigation and per-screen settings</h2>
+<p class="lede">Mockups only; nothing is built. Everything you described is applied. Where I made a call, the caption says so.</p>
+
+<h3>Shopping</h3>
+<div class="row">
+ <!-- SHOPPING LIST -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in">
+   <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:var(--tomato)"></i>Hannaford's<svg class="i" style="width:16px;height:16px;color:var(--stone)"><use href="#i-chev"/></svg></span><span class="gear"><svg class="i"><use href="#i-gear"/></svg></span></div>
+   <h1>Shopping List</h1>
+   <div class="tag"><span class="tagp"><span class="d">$</span>21<sup>34</sup></span><span class="side"><b>Left to spend</b>$53.66 of $75</span></div>
+   <div class="meta"><span><b>5 to get</b> · 1 in the cart</span><a>By aisle ▾</a></div>
+   <div class="ghd">Produce<span class="ct">2</span></div>
+   <div class="grp">
+    <div class="r"><span class="tk"></span><div class="g"><div class="n">Apples, Honeycrisp</div><div class="s">About 3 lb × $2.49/lb</div></div><span class="pr">$7.47</span></div>
+    <div class="r"><span class="tk"></span><div class="g"><div class="n">Bananas</div><div class="s">1 × $0.69</div></div><span class="pr">$0.69</span></div>
+   </div>
+   <div class="ghd">Dairy<span class="ct">2</span></div>
+   <div class="grp">
+    <div class="r"><span class="tk"></span><div class="g"><div class="n">Greek yogurt<span class="sz">6-pack</span></div><div class="s">1 × $6.49</div></div><span class="pr">$6.49</span></div>
+    <div class="r"><span class="tk"></span><div class="g"><div class="n">Birthday candles</div><div class="s"><span class="oneoff" style="margin-left:0">One-off</span> Add a price</div></div><span class="qp focus">$ 3.49</span></div>
+   </div>
+   <div class="ghd">In the cart<span class="ct">1</span></div>
+   <div class="grp">
+    <div class="r done"><span class="tk on"></span><div class="g"><div class="n">Whole milk<span class="sz">½ gal</span></div></div><span class="pr">$4.29</span></div>
+    <div class="addrow"><svg class="i"><use href="#i-plus"/></svg>Add an item</div>
+   </div>
+  </div>
+  <div class="fade"></div>
+  <div class="dock"><div class="tabs glass"><span><svg class="i"><use href="#i-pantry"/></svg>Pantry</span><span class="on"><svg class="i"><use href="#i-list"/></svg>List<i class="badge">5</i></span></div><div class="fin">Finish shopping<i>1</i></div></div>
+ </div>
+ <div class="cap"><b>Shopping List</b><ul>
+  <li>Title "Shopping List"; no photos on rows, so staples and one-offs look alike.</li>
+  <li>Size shows as a small tag after the name ("6-pack"); by-weight items read "About 3 lb × $2.49/lb".</li>
+  <li>One-offs get a dashed "One-off" tag. Until priced they show a price box; tapping it opens the number pad (shown focused here) and the total updates as you type.</li>
+  <li>Gear icon (top right) opens List settings. Tapping any row opens its detail sheet (next phone).</li>
+ </ul></div></div>
+
+ <!-- ROW DETAIL -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in"><div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span></div><h1>Shopping List</h1></div>
+  <div class="dim"></div>
+  <div class="sheet">
+   <div class="handle"></div>
+   <div style="display:flex;gap:14px;align-items:center;margin-bottom:14px"><div class="th" style="width:84px;height:84px;font-size:46px;border-radius:18px">🥛</div><div><h4>Greek yogurt</h4><div class="sub2" style="margin:0">Dairy · Aisle 9</div></div></div>
+   <div class="sec" style="margin-top:4px">Size</div>
+   <div class="opt"><span class="radio"></span><div class="g"><div class="n">4-pack</div><div class="s">Last paid $4.99</div></div></div>
+   <div class="opt sel"><span class="radio"></span><div class="g"><div class="n">6-pack</div><div class="s">Last paid $6.49</div></div></div>
+   <div class="two" style="margin-top:6px"><div class="field"><label>Quantity</label><div class="inp">− &nbsp;1&nbsp; +</div></div><div class="field"><label>Line total</label><div class="inp">$6.49</div></div></div>
+   <div class="btn">Done</div>
+   <div class="lnk">Edit staple</div>
+   <div class="lnk danger" style="padding-top:8px">Remove from list</div>
+  </div>
+ </div>
+ <div class="cap"><b>Tapping a list row</b> opens this sheet: the photo or emoji at a glance, the size (switchable here), quantity and line total. For a one-off the sheet shows a name and price field instead, plus <b>Remove</b>.</div></div>
+
+ <!-- SIZE PICKER from pantry -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in"><div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span></div><h1>Pantry</h1></div>
+  <div class="dim"></div>
+  <div class="sheet">
+   <div class="handle"></div>
+   <h4>Greek yogurt</h4><p class="sub2">Which size this time?</p>
+   <div class="opt"><span class="radio"></span><div class="g"><div class="n">4-pack</div><div class="s">$4.99 · each</div></div></div>
+   <div class="opt sel"><span class="radio"></span><div class="g"><div class="n">6-pack</div><div class="s">$6.49 · each · last time</div></div></div>
+   <div class="opt"><span class="radio"></span><div class="g"><div class="n">32 oz tub</div><div class="s">$5.79 · each</div></div></div>
+   <div class="btn">Add 6-pack to list</div>
+  </div>
+ </div>
+ <div class="cap"><b>Basket tap on a staple with several sizes</b> opens this picker, preselecting the size you chose last. Staples with one size skip it and go straight on the list.</div></div>
+</div>
+
+<h3>Pantry, navigation and settings</h3>
+<div class="row">
+ <!-- PANTRY -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in pan">
+   <div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span><span class="pill"><i class="dot" style="background:conic-gradient(var(--tomato) 0 50%,var(--blue) 0)"></i>All stores<svg class="i" style="width:16px;height:16px;color:var(--stone)"><use href="#i-chev"/></svg></span><span class="gear"><svg class="i"><use href="#i-gear"/></svg></span></div>
+   <h1>Pantry</h1>
+   <div class="find"><div class="search"><svg class="i"><use href="#i-search"/></svg><span style="flex:1">Search staples</span><svg class="i"><use href="#i-filter"/></svg></div><span class="addbtn"><svg class="i" style="width:22px;height:22px"><use href="#i-plus"/></svg></span></div>
+   <div class="shd"><i class="dot" style="background:var(--tomato)"></i><span class="nm">Hannaford's</span><span class="ct">14</span></div>
+   <div class="grp">
+    <div class="r"><div class="th">🍎</div><div class="g"><div class="n">Apples, Honeycrisp</div><div class="s"><b>On your list</b> · $2.49/lb</div></div><span class="bk on"><i><svg class="i" style="width:22px;height:22px"><use href="#b-on"/></svg></i></span></div>
+    <div class="r"><div class="th">🥫</div><div class="g"><div class="n">Crushed tomatoes</div><div class="s">$1.79</div></div><span class="bk"><svg class="i" style="width:24px;height:24px"><use href="#b-add"/></svg></span></div>
+    <div class="r"><div class="th">🥛</div><div class="g"><div class="n">Greek yogurt</div><div class="s">3 sizes · from $4.99</div></div><span class="bk"><svg class="i" style="width:24px;height:24px"><use href="#b-add"/></svg></span></div>
+    <div class="r"><div class="th">🐟</div><div class="g"><div class="n">Light tuna</div><div class="s">5 oz can · $1.59</div></div><span class="bk"><svg class="i" style="width:24px;height:24px"><use href="#b-add"/></svg></span></div>
+   </div>
+   <div class="shd"><i class="dot" style="background:var(--blue)"></i><span class="nm">Target</span><span class="ct">6</span></div>
+   <div class="shd" style="margin-top:6px"><i class="dot" style="background:var(--teal)"></i><span class="nm">Walgreens</span><span class="ct">3</span></div>
+  </div>
+  <div class="fade"></div>
+  <div class="dock"><div class="tabs glass"><span class="on"><svg class="i"><use href="#i-pantry"/></svg>Pantry</span><span><svg class="i"><use href="#i-list"/></svg>List<i class="badge">5</i></span></div><div class="fab"><svg class="i"><use href="#i-receipt"/></svg>Receipt</div></div>
+ </div>
+ <div class="cap"><b>Pantry</b><ul>
+  <li>Two tabs, left-aligned; the List tab carries a badge with what's left to get. The "N staples on your list" line is gone.</li>
+  <li>Floating <b>Receipt</b> button bottom-right, on the Pantry only. The tab bar still collapses to a circle as you scroll.</li>
+  <li>Staples with sizes read "3 sizes · from $4.99"; a one-size staple shows its size if named ("5 oz can").</li>
+  <li>Store dots in the new brighter colours.</li>
+ </ul></div></div>
+
+ <!-- PANTRY SETTINGS -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in"><div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span></div><h1>Pantry</h1></div>
+  <div class="dim"></div>
+  <div class="sheet" style="top:120px">
+   <div class="handle"></div>
+   <h4>Pantry settings</h4>
+   <div class="sec">Stores</div>
+   <div class="grp">
+    <div class="srow"><i class="dot" style="background:var(--tomato)"></i>Hannaford's<span class="v">Main<svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow"><i class="dot" style="background:var(--blue)"></i>Target<span class="v"><svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow"><i class="dot" style="background:var(--teal)"></i>Walgreens<span class="v"><svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow" style="color:var(--fig);font-weight:700">+ Add a store</div>
+   </div>
+   <div class="sec">Organise</div>
+   <div class="grp">
+    <div class="srow">Categories<span class="v">12<svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow">Aisles<span class="v">by store<svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow">Archived staples<span class="v">3<svg class="i chev"><use href="#i-right"/></svg></span></div>
+   </div>
+   <div class="sec">About</div>
+   <div class="grp">
+    <div class="srow">Shelfwise<span class="v">v0.3.0 · Connected</span></div>
+   </div>
+  </div>
+ </div>
+ <div class="cap"><b>Pantry settings</b> (gear on the Pantry): stores, categories, aisles, <b>Archived staples</b> (tap one to restore it), and About. Archive is a button in each staple's edit sheet.</div></div>
+
+ <!-- LIST SETTINGS -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in"><div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span></div><h1>Shopping List</h1></div>
+  <div class="dim"></div>
+  <div class="sheet">
+   <div class="handle"></div>
+   <h4>List settings</h4><p class="sub2"><i class="dot" style="display:inline-block;background:var(--tomato);margin-right:6px"></i>Hannaford's</p>
+   <div class="grp">
+    <div class="srow">Budget<span class="v">$75<svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow">Group by<span class="seg"><span class="on">Aisle</span><span>Category</span><span>None</span></span></div>
+    <div class="srow">Move ticked to the bottom<span class="sw"></span></div>
+   </div>
+   <div class="sec">One-offs</div>
+   <div class="grp">
+    <div class="srow danger">Clear unbought one-offs<span class="v">1</span></div>
+   </div>
+   <p class="sub2" style="margin-top:12px">One-offs you tick are removed when you finish shopping. To keep one, add it as a staple when you scan the receipt.</p>
+  </div>
+ </div>
+ <div class="cap"><b>List settings</b> (gear on the Shopping List), for the store you're shopping: budget, grouping, ticked-to-bottom, and clearing one-offs you didn't buy.</div></div>
+</div>
+
+<h3>Receipt</h3>
+<div class="row">
+ <!-- RECEIPT FIXED -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in">
+   <div class="back"><svg class="i"><use href="#i-left"/></svg>Pantry</div>
+   <h1 style="margin-top:4px">Receipt</h1>
+   <div class="rsum"><div class="paper"></div><div class="g"><div class="n">Hannaford's</div><div class="s">Wed 25 Nov · 7 lines</div></div><span class="pr" style="font-size:18px">$29.18</span></div>
+   <div class="ghd">Needs a look<span class="ct">5</span></div>
+   <div class="grp">
+    <div class="rl"><div class="rtop"><i class="flag"></i><div class="g"><div class="raw">Gm 1ct StarKist 25% Less Sodium Light Tuna in Water</div><div class="n" style="font-size:15px;color:var(--stone);font-weight:500">No match</div></div><span class="pr">$1.59</span></div><div class="acts" style="padding-left:18px"><span>Pick item</span><span>New staple</span><span style="color:var(--stone)">Skip</span></div></div>
+    <div class="rl"><div class="rtop"><i class="flag"></i><div class="g"><div class="raw">1ct Oroweat 100% Whole Wheat Bread, 24oz</div><div class="n" style="font-size:15px">Whole wheat bread?</div><div class="s" style="color:var(--mtext);font-weight:600">Best guess</div></div><span class="pr">$5.44</span></div><div class="acts" style="padding-left:18px"><span>Yes</span><span>Pick item</span><span>New staple</span><span style="color:var(--stone)">Skip</span></div></div>
+    <div class="rl"><div class="rtop"><i class="flag"></i><div class="g"><div class="raw">1ct Hannaford Mixed Vegetables</div><div class="n" style="font-size:15px;color:var(--stone);font-weight:500">No match</div></div><span class="pr">$2.49</span></div><div class="acts" style="padding-left:18px"><span>Pick item</span><span>New staple</span><span style="color:var(--stone)">Skip</span></div></div>
+   </div>
+   <div class="ghd">Matched<span class="ct">2</span></div>
+  </div>
+  <div class="savebar"><div class="btn" style="margin:0">Save 2 prices</div></div>
+ </div>
+ <div class="cap"><b>Receipt, fixed</b><ul>
+  <li>Opens full-screen from the Pantry's Receipt button, with a back link.</li>
+  <li>One card per group with dividers; raw lines wrap to two lines and never overflow; the price sits inside the card on the right.</li>
+  <li>Actions are text buttons in a row: <b>Pick item</b>, <b>New staple</b>, <b>Skip</b> (plus <b>Yes</b> for a best guess).</li>
+  <li>The save button sits at the bottom with room underneath, and the list scrolls clear of it.</li>
+ </ul></div></div>
+
+ <!-- NEW STAPLE FROM RECEIPT with keyboard -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in"><div class="back"><svg class="i"><use href="#i-left"/></svg>Pantry</div><h1>Receipt</h1></div>
+  <div class="dim"></div>
+  <div class="sheet" style="bottom:250px;border-radius:28px;margin:0 8px">
+   <div class="handle"></div>
+   <h4>New staple</h4>
+   <div class="raw" style="margin-bottom:12px">Gm 1ct StarKist 25% Less Sodium Light Tuna in Water $1.59</div>
+   <div class="field"><label>Name</label><div class="inp focus">Light tuna|</div></div>
+   <div class="two"><div class="field"><label>Size</label><div class="inp">5 oz can</div></div><div class="field"><label>Price</label><div class="inp">$1.59</div></div></div>
+   <div class="btn" style="margin-top:2px">Save staple</div>
+  </div>
+  <div class="kb">keyboard</div>
+ </div>
+ <div class="cap"><b>New staple from a receipt line</b>, shown with the keyboard open: the sheet lifts above the keyboard so the field you're typing in stays visible. The keyboard only appears because the Name field was tapped; sheets never open it on their own. Price comes from the receipt; category and aisle can be set later.</div></div>
+
+ <!-- STAPLE SHEET SIZES -->
+ <div class="col"><div class="ph">
+  <div class="sb"><span>9:41</span><span>●●● ▮</span></div>
+  <div class="in"><div class="hdr"><span class="wm">Shelfw<span class="i">ı</span>se</span></div><h1>Pantry</h1></div>
+  <div class="dim"></div>
+  <div class="sheet" style="top:110px">
+   <div class="handle"></div>
+   <div style="display:flex;gap:14px;align-items:center;margin-bottom:12px"><div class="th" style="width:64px;height:64px;font-size:34px;border-radius:14px">🥛</div><div class="g"><div class="inp" style="font-weight:700">Greek yogurt</div></div></div>
+   <div class="sec">Sizes</div>
+   <div class="grp">
+    <div class="srow"><div class="g"><div class="n" style="font-size:15.5px">4-pack</div><div class="s">Each · $4.99 · from receipt</div></div><span class="v"><svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow"><div class="g"><div class="n" style="font-size:15.5px">6-pack <span class="sz" style="margin-left:4px">Default</span></div><div class="s">Each · $6.49 · entered by you</div></div><span class="v"><svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow"><div class="g"><div class="n" style="font-size:15.5px">32 oz tub</div><div class="s">Each · $5.79</div></div><span class="v"><svg class="i chev"><use href="#i-right"/></svg></span></div>
+    <div class="srow" style="color:var(--fig);font-weight:700">+ Add a size</div>
+   </div>
+   <div class="two" style="margin-top:12px"><div class="field"><label>Category</label><div class="inp">Dairy ▾</div></div><div class="field"><label>Aisle</label><div class="inp">9 ▾</div></div></div>
+   <div class="btn">Save</div>
+   <div class="lnk">Archive staple</div>
+   <div class="lnk danger" style="padding-top:8px">Delete staple</div>
+  </div>
+ </div>
+ <div class="cap"><b>Staple sheet with sizes</b>: each size has a name, "each" or "by weight", its own price (and where the price came from), and one can be the default. <b>Archive staple</b> hides it and keeps its history; Delete removes it for good.</div></div>
+</div>
+
+<h3>Brighter store colours</h3>
+<div class="pal">
+ <div class="pc"><i class="dot" style="background:var(--tomato)"></i>Tomato<small>3.9:1</small></div>
+ <div class="pc"><i class="dot" style="background:var(--pumpkin)"></i>Pumpkin<small>3.6:1</small></div>
+ <div class="pc"><i class="dot" style="background:var(--berry)"></i>Berry<small>4.7:1</small></div>
+ <div class="pc"><i class="dot" style="background:var(--violet)"></i>Violet<small>4.7:1</small></div>
+ <div class="pc"><i class="dot" style="background:var(--blue)"></i>Blue<small>4.2:1</small></div>
+ <div class="pc"><i class="dot" style="background:var(--teal)"></i>Teal<small>3.6:1</small></div>
+ <div class="pc"><i class="dot" style="background:var(--green)"></i>Green<small>3.6:1</small></div>
+ <div class="pc"><i class="dot" style="background:var(--slate)"></i>Slate<small>4.7:1</small></div>
+</div>
+<p class="lede">Contrast against the page background (3:1 is the bar for coloured marks). Existing stores move to the nearest new colour: Fig → Berry, Claret → Tomato, Cinnamon → Pumpkin, Olive → Green, Forest → Green, Teal → Teal, Harbor → Blue, Slate → Slate.</p>
+</body></html>

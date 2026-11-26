@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Router } from 'express';
 import { STORE_COLORS, transaction, type Db } from '../db';
+import { compareAisles } from '../lib/aisles';
 
 type StoreRow = { id: number; name: string; is_main: number; color: string };
 const toStore = (r: StoreRow) => ({ id: r.id, name: r.name, isMain: r.is_main === 1, color: r.color });
@@ -17,7 +18,7 @@ export function storesRouter(db: Db, dataDir: string): Router {
   r.post('/', (req, res) => {
     const name = String(req.body?.name ?? '').trim();
     if (!name) return res.status(400).json({ error: 'name required' });
-    const color = req.body?.color ?? 'fig';
+    const color = req.body?.color ?? 'tomato';
     if (!validColor(color)) return res.status(400).json({ error: 'unknown colour' });
     const isMain = req.body?.isMain ? 1 : 0;
     try {
@@ -57,12 +58,34 @@ export function storesRouter(db: Db, dataDir: string): Router {
     }
     res.json(toStore(find(store.id)!));
   });
+  r.get('/:id/aisles', (req, res) => {
+    const store = find(Number(req.params.id));
+    if (!store) return res.status(404).json({ error: 'store not found' });
+    const rows = db.prepare(
+      "select aisle, count(*) as count from items where store_id = ? and archived_at is null and aisle is not null and aisle != '' group by aisle",
+    ).all(store.id) as { aisle: string; count: number }[];
+    res.json(rows.sort((a, b) => compareAisles(a.aisle, b.aisle)));
+  });
+  r.post('/:id/aisles/rename', (req, res) => {
+    const store = find(Number(req.params.id));
+    if (!store) return res.status(404).json({ error: 'store not found' });
+    const from = String(req.body?.from ?? '');
+    const to = String(req.body?.to ?? '').trim();
+    if (!to) return res.status(400).json({ error: 'name required' });
+    if (to.length > 20) return res.status(400).json({ error: 'aisle is too long' });
+    const info = db.prepare('update items set aisle = ?, changed_at = ? where store_id = ? and aisle = ?')
+      .run(to, new Date().toISOString(), store.id, from);
+    res.json({ renamed: Number(info.changes) });
+  });
   r.delete('/:id', (req, res) => {
     const store = find(Number(req.params.id));
     if (!store) return res.status(404).json({ error: 'store not found' });
     if (store.is_main === 1) return res.status(409).json({ error: 'make another store main first' });
-    const { n } = db.prepare('select count(*) as n from items where store_id = ?').get(store.id) as { n: number };
-    if (n > 0) return res.status(409).json({ error: `Move or delete its ${n} staples first`, staples: n });
+    const { n, a } = db.prepare('select count(*) as n, coalesce(sum(archived_at is not null), 0) as a from items where store_id = ?').get(store.id) as { n: number; a: number };
+    if (n > 0) {
+      if (a > 0) return res.status(409).json({ error: `Move or delete its ${n} staples first (${a} ${a === 1 ? 'is' : 'are'} archived)`, staples: n, archived: a });
+      return res.status(409).json({ error: `Move or delete its ${n} staples first`, staples: n });
+    }
     const photos = (db.prepare('select photo from receipts where store_id = ? and photo is not null').all(store.id) as { photo: string }[])
       .map((p) => p.photo);
     transaction(db, () => {

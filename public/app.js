@@ -2,12 +2,14 @@ import * as api from './api.js';
 import { mountTabBar } from './ui/tabbar.js';
 import { mountStorePicker } from './ui/store-picker.js';
 import { openStoreSheet } from './views/store-sheet.js';
-import { renderSettings } from './views/settings.js';
 import { renderPantry, pantryHooks } from './views/pantry.js';
 import { renderList } from './views/list.js';
 import { renderReceipt } from './views/receipt.js';
 import { finishForStore } from './views/finish-sheet.js';
 import { errorState } from './ui/empty-state.js';
+import { icon } from './ui/icons.js';
+import { lineKey } from './lib/trip.js';
+import { budgetKey } from './views/budget-sheet.js';
 
 const root = document.getElementById('view');
 const offlineBar = document.getElementById('offline');
@@ -18,15 +20,20 @@ const state = { stores: [], pantryStoreId: null, storeId: null, loadError: null 
 
 api.onOffline((on) => { offlineBar.hidden = !on; });
 
+// Toasts live outside the view root (a redraw clears the root) and above the tab bar and sheets.
+const toasts = document.createElement('div');
+toasts.className = 'toasts';
+toasts.setAttribute('aria-live', 'polite');
+document.body.append(toasts);
 export function toast(message) {
   const el = document.createElement('div');
-  el.className = 'msg'; el.setAttribute('role', 'alert'); el.textContent = message;
-  root.prepend(el);
+  el.className = 'toast'; el.textContent = message;
+  toasts.append(el);
   setTimeout(() => el.remove(), 5000);
 }
 
-const VIEW_TITLES = { pantry: 'Pantry', list: 'List', receipt: 'Receipt', settings: 'Settings' };
-const VIEWS = { pantry: renderPantry, list: renderList, receipt: renderReceipt, settings: renderSettings };
+const VIEW_TITLES = { pantry: 'Pantry', list: 'List', receipt: 'Receipt' };
+const VIEWS = { pantry: renderPantry, list: renderList, receipt: renderReceipt };
 
 function route() {
   const [, view = 'pantry'] = location.hash.split('/');
@@ -38,10 +45,16 @@ const mainStore = () => state.stores.find((s) => s.isMain) ?? state.stores[0] ??
 const storeById = (id) => state.stores.find((s) => s.id === id) ?? null;
 
 const dock = document.querySelector('.dock');
+const fab = document.getElementById('fab');
+const backLink = document.getElementById('back-link');
+fab.innerHTML = icon('receipt');
 
 function drawPill(view) {
-  dock.hidden = state.stores.length === 0 && !state.loadError; // first run: no tab bar until a store exists
-  const showPill = state.stores.length > 0 && view !== 'settings';
+  // First run: no tab bar until a store exists. The Receipt route is full screen with a back link instead.
+  dock.hidden = (state.stores.length === 0 && !state.loadError) || view === 'receipt';
+  backLink.hidden = view !== 'receipt';
+  fab.hidden = view !== 'pantry' || state.stores.length === 0; // the Receipt button lives on the Pantry only
+  const showPill = state.stores.length > 0;
   storeBtn.hidden = !showPill;
   if (!showPill) return;
   const s = view === 'pantry' ? storeById(state.pantryStoreId) : storeById(state.storeId);
@@ -64,6 +77,7 @@ async function render() {
   const seq = ++renderSeq;
   const stale = () => seq !== renderSeq;
   const view = route();
+  refreshBadge();
   document.getElementById('dock-action')?.replaceChildren(); // the List fills this with its Finish pill
   drawPill(view);
   if (state.loadError) {
@@ -71,7 +85,7 @@ async function render() {
     return;
   }
   if (!state.stores.length) { renderFirstRun(); return; }
-  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open() }); }
+  try { await VIEWS[view](root, { storeId: view === 'pantry' ? state.pantryStoreId : state.storeId, toast, state, stale, openStoreMenu: () => storePicker.open(), reloadStores: () => reloadAfterEdit() }); }
   catch (err) {
     if (stale()) return;
     root.replaceChildren(errorState({ title: VIEW_TITLES[view], message: err.message, onRetry: render }));
@@ -131,7 +145,29 @@ const storePicker = mountStorePicker(storeBtn, {
   onAdd: () => openStoreSheet(null, { onSaved: (s) => reloadAfterEdit(s.id) }),
 });
 
-mountTabBar(document.getElementById('tabs'), window);
+const tabBar = mountTabBar(document.getElementById('tabs'), window);
+
+// The List tab's badge: unticked staples and one-offs for the List store (Ruling 2).
+let badgeKeys = [];
+let badgeStoreId = null;
+function drawBadge() {
+  const ticked = new Set(api.trips.get(state.storeId).ids);
+  tabBar.setBadge(badgeKeys.filter((k) => !ticked.has(k)).length);
+}
+async function refreshBadge() {
+  const id = state.storeId;
+  if (id !== badgeStoreId) { badgeKeys = []; badgeStoreId = id; drawBadge(); } // a store switch never shows the previous store's count
+  if (id == null) return;
+  try {
+    const data = await api.getList(id, api.store.get(budgetKey(id), ''));
+    if (id !== state.storeId) return;
+    badgeKeys = [...data.lines, ...data.unpriced].map(lineKey);
+    drawBadge();
+  } catch { /* keep the count that is showing */ }
+}
+let badgeTimer = 0;
+window.addEventListener('sw:list-changed', () => { clearTimeout(badgeTimer); badgeTimer = setTimeout(refreshBadge, 120); });
+window.addEventListener('sw:trips', () => { if (state.storeId != null) drawBadge(); });
 window.addEventListener('hashchange', render);
 api.trips.dropLegacy(); // the old single "sw-checked" list is replaced by per-store trips
 

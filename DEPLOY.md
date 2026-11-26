@@ -115,7 +115,17 @@ sudo systemctl restart shelfwise
 
 If you run it with pm2 instead of systemd, use the same backup and `git rev-parse HEAD` steps, then `npm run update` and `pm2 restart shelfwise`. Take the backup **before** `npm run update`: pm2 restarts the app as soon as the new code lands, and that first start is when the database is upgraded.
 
-The first start after upgrading migrates the database automatically, and you don't need to do anything. Staples that were marked **Low** or **Out** are now "on the list", so your shopping list looks the same as before. Ticks you made in the store before the upgrade are cleared, so you'll start with nothing ticked. 
+The first start after upgrading migrates the database automatically, and you don't need to do anything. Staples that were marked **Low** or **Out** are now "on the list", so your shopping list looks the same as before. Ticks you made in the store before the upgrade are cleared, so you'll start with nothing ticked.
+
+This release also upgrades the database to version 2, and a few things look different afterwards:
+
+- Each staple becomes one size and keeps its price. You can add more sizes (a 4-pack and a 6-pack, or a price per lb) from the staple's edit sheet.
+- Store colours move to the new, brighter palette. Each store keeps a similar colour.
+- The Settings tab is gone. The Pantry and the Shopping List each have a cog beside their title.
+- Receipt is now the round button at the bottom right of the Pantry.
+- One-offs, the things you add to the list that aren't staples, are deleted when you tick them and press Finish shopping.
+
+Back up before you update, because the upgrade runs on first start and can't be undone by restoring code alone.
 
 ### Rolling back
 

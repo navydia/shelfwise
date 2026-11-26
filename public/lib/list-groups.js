@@ -1,4 +1,5 @@
 // Grouping and ordering of shopping-list lines. No DOM access.
+import { lineKey } from './trip.js';
 const NUM = /^\d+$/;
 const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
@@ -20,7 +21,7 @@ export function compareAisles(a, b) {
 export function groupList(lines, by, categories, ticked, tickedToBottom) {
   const cart = [];
   const rest = [];
-  for (const l of lines) (tickedToBottom && ticked.has(l.id) ? cart : rest).push(l);
+  for (const l of lines) (tickedToBottom && ticked.has(lineKey(l)) ? cart : rest).push(l);
 
   let groups;
   if (by === 'aisle') {

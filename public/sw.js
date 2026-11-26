@@ -1,14 +1,15 @@
 // Shelfwise service worker: caches the app shell and saves recent read responses
 // so the list and prices still show with weak or no signal. Writes are never queued.
-const VERSION = 'v15';
+const VERSION = 'v21';
 const SHELL_CACHE = `shelfwise-shell-${VERSION}`;
 const DATA_CACHE = `shelfwise-data-${VERSION}`;
 const SHELL = [
   '/', '/app.js', '/api.js', '/app.css', '/tokens.css', '/manifest.webmanifest', '/icon-180.png', '/icon-512.png',
   '/views/pantry.js', '/views/list.js', '/views/receipt.js',
-  '/ui/wordmark.js', '/ui/icons.js', '/ui/sheet.js', '/ui/tabbar.js', '/ui/store-picker.js', '/ui/empty-state.js', '/ui/skeleton.js',
-  '/views/store-sheet.js', '/views/staple-sheet.js', '/views/filter-sheet.js', '/ui/trip-cards.js', '/views/settings.js', '/views/finish-sheet.js', '/views/budget-sheet.js',
-  '/lib/budget-tag.js', '/lib/list-groups.js', '/lib/money.js', '/lib/pantry-view.js', '/lib/trip.js', '/lib/screen-states.js',
+  '/ui/wordmark.js', '/ui/icons.js', '/ui/sheet.js', '/ui/tabbar.js', '/ui/store-picker.js', '/ui/empty-state.js', '/ui/skeleton.js', '/ui/thumb.js', '/ui/title-row.js', '/ui/emoji-sheet.js',
+  '/views/store-sheet.js', '/views/staple-sheet.js', '/views/filter-sheet.js', '/ui/trip-cards.js', '/views/finish-sheet.js', '/views/budget-sheet.js',
+  '/views/size-sheet.js', '/views/size-picker.js', '/views/pantry-settings.js', '/views/category-sheet.js', '/views/aisle-sheet.js', '/views/archived-sheet.js', '/views/line-sheet.js', '/views/list-settings.js', '/views/new-staple-sheet.js',
+  '/lib/budget-tag.js', '/lib/list-groups.js', '/lib/money.js', '/lib/pantry-view.js', '/lib/trip.js', '/lib/screen-states.js', '/lib/sizes.js', '/lib/receipt-name.js', '/lib/emoji.js', '/lib/staple-sizes.js', '/lib/oneoffs.js', '/lib/receipt-save.js',
   '/fonts/figtree-400.woff2', '/fonts/figtree-600.woff2', '/fonts/figtree-700.woff2', '/fonts/figtree-800.woff2', '/fonts/bricolage-800.woff2', '/fonts/plex-mono-400.woff2',
 ];
 
@@ -73,6 +74,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
   if (request.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.pathname === '/api/health') return; // never cached: About must reflect the network right now
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(networkFirst(request, DATA_CACHE, true, API_TIMEOUT_MS));
   } else if (url.pathname.startsWith('/photos/')) {

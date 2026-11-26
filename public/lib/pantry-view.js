@@ -7,6 +7,7 @@ export function pantryView(items, opts, ctx) {
   const total = items.length;
   const q = (opts.query || '').trim().toLowerCase();
   const filtered = items.filter((i) => {
+    if (i.archived) return false;
     if (ctx.storeId != null && i.storeId !== ctx.storeId) return false;
     if (opts.show === 'onList' && !i.onList) return false;
     if (opts.categoryId != null && i.categoryId !== opts.categoryId) return false;

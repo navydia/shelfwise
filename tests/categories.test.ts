@@ -14,7 +14,7 @@ describe('categories API', () => {
     expect(names).toEqual(sorted);
     expect(names[0]).toBe('Bakery');
     expect(names[names.length - 1]).toBe('Snacks');
-    expect(res.body[0]).toEqual({ id: expect.any(Number), name: 'Bakery' });
+    expect(res.body[0]).toEqual({ id: expect.any(Number), name: 'Bakery', count: 0 });
   });
 
   it('creates_category', async () => {
@@ -42,5 +42,68 @@ describe('categories API', () => {
     expect(res.body).toEqual({ error: 'name required' });
     const missing = await api.post('/api/categories').send({});
     expect(missing.status).toBe(400);
+  });
+});
+
+describe('categories API: management', () => {
+  it('rename_category', async () => {
+    const { api } = makeApp();
+    const c = (await api.post('/api/categories').send({ name: 'Spices' })).body;
+    const res = await api.patch(`/api/categories/${c.id}`).send({ name: ' Herbs ' });
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ id: c.id, name: 'Herbs' });
+    expect((await api.patch('/api/categories/9999').send({ name: 'x' })).status).toBe(404);
+    expect((await api.patch(`/api/categories/${c.id}`).send({ name: ' ' })).status).toBe(400);
+  });
+  it('rename_category_duplicate_409', async () => {
+    const { api } = makeApp();
+    const c = (await api.post('/api/categories').send({ name: 'Spices' })).body;
+    expect((await api.patch(`/api/categories/${c.id}`).send({ name: 'produce' })).status).toBe(409);
+  });
+  it('delete_category_in_use_409', async () => {
+    const { api } = makeApp();
+    const store = (await api.post('/api/stores').send({ name: 'Main' })).body;
+    const c = (await api.post('/api/categories').send({ name: 'Spices' })).body;
+    await api.post('/api/items').send({ name: 'Salt', storeId: store.id, categoryId: c.id });
+    const res = await api.delete(`/api/categories/${c.id}`);
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Move its 1 staples first', staples: 1 });
+    const empty = (await api.post('/api/categories').send({ name: 'Empty' })).body;
+    expect((await api.delete(`/api/categories/${empty.id}`)).status).toBe(204);
+    expect((await api.delete(`/api/categories/${empty.id}`)).status).toBe(404);
+  });
+  it('categories_include_counts', async () => {
+    const { api } = makeApp();
+    const store = (await api.post('/api/stores').send({ name: 'Main' })).body;
+    const c = (await api.post('/api/categories').send({ name: 'Spices' })).body;
+    await api.post('/api/items').send({ name: 'Salt', storeId: store.id, categoryId: c.id });
+    const gone = (await api.post('/api/items').send({ name: 'Mace', storeId: store.id, categoryId: c.id })).body;
+    await api.patch(`/api/items/${gone.id}`).send({ archived: true });
+    const row = (await api.get('/api/categories')).body.find((x: { id: number }) => x.id === c.id);
+    expect(row).toEqual({ id: c.id, name: 'Spices', count: 1 });
+  });
+});
+
+describe('categories API: archived staples', () => {
+  it('delete_category_ignores_archived_staples', async () => {
+    const { api, db } = makeApp();
+    const store = (await api.post('/api/stores').send({ name: 'Main' })).body;
+    const c = (await api.post('/api/categories').send({ name: 'Spices' })).body;
+    const old = (await api.post('/api/items').send({ name: 'Mace', storeId: store.id, categoryId: c.id })).body;
+    await api.patch(`/api/items/${old.id}`).send({ archived: true });
+    expect((await api.delete(`/api/categories/${c.id}`)).status).toBe(204);
+    expect(db.prepare('select category_id from items where id = ?').get(old.id)).toEqual({ category_id: null });
+  });
+  it('delete_409_count_matches_get_count', async () => {
+    const { api } = makeApp();
+    const store = (await api.post('/api/stores').send({ name: 'Main' })).body;
+    const c = (await api.post('/api/categories').send({ name: 'Spices' })).body;
+    await api.post('/api/items').send({ name: 'Salt', storeId: store.id, categoryId: c.id });
+    const old = (await api.post('/api/items').send({ name: 'Mace', storeId: store.id, categoryId: c.id })).body;
+    await api.patch(`/api/items/${old.id}`).send({ archived: true });
+    const count = (await api.get('/api/categories')).body.find((x: { id: number }) => x.id === c.id).count;
+    const res = await api.delete(`/api/categories/${c.id}`);
+    expect(res.status).toBe(409);
+    expect(res.body).toEqual({ error: 'Move its 1 staples first', staples: count });
   });
 });

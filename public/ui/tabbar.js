@@ -3,15 +3,16 @@ import { icon } from './icons.js';
 const TABS = [
   { route: 'pantry', label: 'Pantry' },
   { route: 'list', label: 'List' },
-  { route: 'receipt', label: 'Receipt' },
-  { route: 'settings', label: 'Settings' },
 ];
 const COLLAPSE_AFTER = 24; // px scrolled down before the bar folds into a circle
 
 // nav is the .tabs element inside .dock. Its parent dock carries .mini when collapsed.
+// Returns { setBadge(n) }: the List tab's count of things still to get (hidden at 0).
 export function mountTabBar(nav, scroller = window) {
   const dock = nav.parentElement;
-  nav.innerHTML = TABS.map((t) => `<a href="#/${t.route}" data-tab="${t.route}">${icon(t.route)}<span>${t.label}</span></a>`).join('');
+  nav.innerHTML = TABS.map((t) => `<a href="#/${t.route}" data-tab="${t.route}">${icon(t.route)}<span>${t.label}</span>${t.route === 'list' ? '<i class="badge" hidden></i>' : ''}</a>`).join('');
+  const badge = nav.querySelector('.badge');
+  const listTab = nav.querySelector('[data-tab=list]');
 
   function mark() {
     const [, route = 'pantry'] = location.hash.split('/');
@@ -37,4 +38,12 @@ export function mountTabBar(nav, scroller = window) {
     else if (y > last && y - anchor >= COLLAPSE_AFTER) dock.classList.add('mini');
     last = y;
   }, { passive: true });
+  return {
+    setBadge(n) {
+      const count = Math.max(0, Number(n) || 0);
+      badge.hidden = count === 0;
+      badge.textContent = count > 99 ? '99+' : String(count);
+      listTab.setAttribute('aria-label', count ? `List, ${count} to get` : 'List');
+    },
+  };
 }

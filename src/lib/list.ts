@@ -1,15 +1,41 @@
-export type ListItem = {
+export type ListStaple = {
   id: number;
   name: string;
+  emoji: string | null;
   photo: string | null;
-  usualQty: number;
-  lastPriceCents: number | null;
-  onList: boolean;
   categoryId: number | null;
   aisle: string | null;
+  onList: boolean;
+  archived: boolean;
+  sizeId: number | null;
+  sizeName: string;
+  soldBy: 'each' | 'weight';
+  unitPriceCents: number | null;
+  amount: number;
 };
 
-export type ListLine = ListItem & { lineCents: number | null };
+export type ListOneoff = {
+  id: number;
+  name: string;
+  priceCents: number | null;
+  amount: number;
+};
+
+export type ListLine = {
+  kind: 'staple' | 'oneoff';
+  id: number;
+  name: string;
+  emoji: string | null;
+  photo: string | null;
+  categoryId: number | null;
+  aisle: string | null;
+  sizeId: number | null;
+  sizeName: string;
+  soldBy: 'each' | 'weight';
+  unitPriceCents: number | null;
+  amount: number;
+  lineCents: number | null;
+};
 
 export type ListResult = {
   lines: ListLine[];
@@ -18,18 +44,31 @@ export type ListResult = {
   status: 'none' | 'under' | 'near' | 'over';
 };
 
-export function buildList(items: ListItem[], budgetCents: number | null): ListResult {
-  const onList = items.filter((i) => i.onList);
+export function buildList(staples: ListStaple[], oneoffs: ListOneoff[], budgetCents: number | null): ListResult {
+  const all: ListLine[] = [];
+  for (const s of staples) {
+    if (!s.onList || s.archived) continue;
+    all.push({
+      kind: 'staple', id: s.id, name: s.name, emoji: s.emoji, photo: s.photo, categoryId: s.categoryId, aisle: s.aisle,
+      sizeId: s.sizeId, sizeName: s.sizeName, soldBy: s.soldBy, unitPriceCents: s.unitPriceCents, amount: s.amount, lineCents: null,
+    });
+  }
+  for (const o of oneoffs) {
+    all.push({
+      kind: 'oneoff', id: o.id, name: o.name, emoji: null, photo: null, categoryId: null, aisle: null,
+      sizeId: null, sizeName: '', soldBy: 'each', unitPriceCents: o.priceCents, amount: o.amount, lineCents: null,
+    });
+  }
   const lines: ListLine[] = [];
   const unpriced: ListLine[] = [];
   let subtotalCents = 0;
-  for (const i of onList) {
-    if (i.lastPriceCents === null) {
-      unpriced.push({ ...i, lineCents: null });
+  for (const l of all) {
+    if (l.unitPriceCents === null) {
+      unpriced.push(l);
     } else {
-      const lineCents = i.lastPriceCents * i.usualQty;
-      subtotalCents += lineCents;
-      lines.push({ ...i, lineCents });
+      l.lineCents = Math.round(l.unitPriceCents * l.amount);
+      subtotalCents += l.lineCents;
+      lines.push(l);
     }
   }
   let status: ListResult['status'] = 'none';
