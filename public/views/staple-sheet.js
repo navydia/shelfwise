@@ -42,14 +42,14 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
   body.noValidate = true;
   body.innerHTML = `
     <div class="edit-head">
-      <button type="button" class="photo-pick" aria-haspopup="true" aria-expanded="false" aria-label="Change picture"><span class="im" aria-hidden="true"></span><span class="chg">Change</span></button>
+      <button type="button" class="photo-pick" aria-haspopup="true" aria-expanded="false" aria-label="Change picture"><span class="im" aria-hidden="true"></span><span class="chg" aria-hidden="true">${icon('cog')}</span></button>
       <input type="file" name="photo" accept="image/*" hidden aria-label="Choose a photo">
       <label class="field grow">Name<input type="text" name="name" autocomplete="off" maxlength="80"></label>
     </div>
-    <div class="pic-menu" hidden>
-      <button type="button" class="btn-soft" data-pic="photo">Take or choose a photo</button>
-      <button type="button" class="btn-soft" data-pic="emoji">Use an emoji</button>
-      <button type="button" class="btn-soft" data-pic="remove" hidden>Remove emoji</button>
+    <div class="pic-menu" role="menu" aria-label="Picture" hidden>
+      <button type="button" role="menuitem" data-pic="photo">Take or choose a photo</button>
+      <button type="button" role="menuitem" data-pic="emoji">Use an emoji</button>
+      <button type="button" role="menuitem" data-pic="remove" hidden>Remove emoji</button>
     </div>
     <div class="sizes" role="group" aria-labelledby="sizes-label">
       <div class="slab" id="sizes-label">Sizes</div>
@@ -199,11 +199,38 @@ export function openStapleSheet(item, { stores, categories, defaultStoreId, onSa
   });
 
   // ---- picture ----
-  const closeMenu = () => { picMenu.hidden = true; picBtn.setAttribute('aria-expanded', 'false'); };
-  picBtn.addEventListener('click', () => {
-    picMenu.hidden = !picMenu.hidden;
-    picBtn.setAttribute('aria-expanded', String(!picMenu.hidden));
-  });
+  // A small pop-up just below and right of the picture, floating over the rest of the sheet.
+  // It closes on a choice, a tap anywhere else, Escape, or when the sheet scrolls.
+  const closeMenu = () => {
+    if (picMenu.hidden) return;
+    picMenu.hidden = true;
+    picBtn.setAttribute('aria-expanded', 'false');
+    document.removeEventListener('pointerdown', onOutside, true);
+    window.removeEventListener('keydown', onMenuKey, true);
+    body.closest('.sheet')?.removeEventListener('scroll', closeMenu);
+  };
+  function onOutside(e) {
+    if (!body.isConnected) return closeMenu();
+    if (!picMenu.contains(e.target) && !picBtn.contains(e.target)) closeMenu();
+  }
+  function onMenuKey(e) {
+    if (e.key !== 'Escape') return;
+    e.preventDefault(); e.stopPropagation(); // close the menu, not the whole sheet
+    closeMenu(); picBtn.focus();
+  }
+  function openMenu() {
+    picMenu.hidden = false;
+    picBtn.setAttribute('aria-expanded', 'true');
+    const r = picBtn.getBoundingClientRect();
+    const w = picMenu.offsetWidth;
+    picMenu.style.left = `${Math.max(12, Math.min(r.left + 28, window.innerWidth - w - 12))}px`;
+    picMenu.style.top = `${r.top + 40}px`;
+    document.addEventListener('pointerdown', onOutside, true);
+    window.addEventListener('keydown', onMenuKey, true);
+    body.closest('.sheet')?.addEventListener('scroll', closeMenu, { passive: true });
+    picMenu.querySelector('button:not([hidden])')?.focus({ preventScroll: true });
+  }
+  picBtn.addEventListener('click', () => { if (picMenu.hidden) openMenu(); else closeMenu(); });
   picMenu.addEventListener('click', (e) => {
     const act = e.target.closest('[data-pic]')?.dataset.pic;
     if (!act) return;
