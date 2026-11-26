@@ -1,4 +1,5 @@
 import { icon } from './icons.js';
+import { axisLock, sheetCloses, sheetOffset, velocity } from '../lib/swipe.js';
 
 // Bottom sheet: optional title, close button, backdrop. Closes on backdrop tap or Escape; focus stays inside.
 // It never focuses a text field on open (that would pop the keyboard): focus goes to the sheet itself.
@@ -63,7 +64,11 @@ export function openSheet({ title, body, onClose } = {}) {
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   el.tabIndex = -1;
-  // Header: the title (if any) and a close button. No drag handle: sheets close with X, a tap outside, or Escape.
+  // Grab bar, then the header: the title (if any) and a close button. Sheets close by dragging down, X, a tap
+  // outside, or Escape.
+  const grab = document.createElement('div');
+  grab.className = 'handle';
+  grab.setAttribute('aria-hidden', 'true');
   const head = document.createElement('div');
   head.className = title ? 'sheet-head' : 'sheet-head bare';
   if (title) {
@@ -79,7 +84,7 @@ export function openSheet({ title, body, onClose } = {}) {
   x.setAttribute('aria-label', 'Close');
   x.innerHTML = icon('close');
   head.append(x);
-  el.append(head, body);
+  el.append(grab, head, body);
   if (!OPEN.length) lockPage();
   document.body.append(dim, el);
 
@@ -122,6 +127,80 @@ export function openSheet({ title, body, onClose } = {}) {
   x.addEventListener('click', close);
   // A swipe on the dimmed page must not scroll what is behind it.
   dim.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+  attachDragToClose(el, { grab, head, dim, close });
   el.focus({ preventScroll: true });
   return { close, el };
+}
+
+// Drag a sheet down to close it. From the grab bar or header it always drags; from the body only when the sheet
+// (and whatever scroller the finger is in) is scrolled to the top and the pull is downward, so content still scrolls.
+function attachDragToClose(el, { grab, head, dim, close }) {
+  let d = null; // { x, y, axis, fromTop, dy, h, samples }
+
+  function begin(x, y, t, target) {
+    if (target.closest?.('input, textarea, select')) return;
+    if (document.activeElement?.matches?.(FIELD) && el.contains(document.activeElement)) return; // keyboard up: no drag
+    d = { x, y, t, axis: null, fromTop: grab.contains(target) || head.contains(target), dy: 0, h: el.offsetHeight, samples: [{ t, v: 0 }], target };
+  }
+  function scrolledInside(target) {
+    for (let n = target; n && n !== el.parentNode; n = n.parentNode) if (n.scrollTop > 0) return true;
+    return false;
+  }
+  function move(x, y, t, e) {
+    if (!d) return;
+    const dx = x - d.x; const dy = y - d.y;
+    if (!d.axis) {
+      d.axis = axisLock(dx, dy);
+      if (!d.axis) return;
+      const ok = d.axis === 'y' && (d.fromTop || (dy > 0 && !scrolledInside(d.target)));
+      if (!ok) { d = null; return; }
+      el.classList.add('dragging');
+      d.y = y; // start from here so the sheet doesn't jump by the lock distance
+    }
+    e?.preventDefault();
+    d.dy = y - d.y;
+    d.samples.push({ t, v: d.dy });
+    if (d.samples.length > 8) d.samples.shift();
+    el.style.transition = 'none';
+    el.style.transform = `translate3d(0, ${sheetOffset(d.dy)}px, 0)`;
+    dim.style.transition = 'none';
+    dim.style.opacity = String(1 - Math.min(1, Math.max(0, d.dy) / d.h) * 0.9);
+  }
+  function end() {
+    if (!d) return;
+    const done = d.axis === 'y' && sheetCloses(d.dy, velocity(d.samples), d.h);
+    const dragged = d.axis === 'y';
+    const h = d.h;
+    d = null;
+    if (!dragged) return;
+    el.classList.remove('dragging');
+    if (done) {
+      el.style.transition = 'transform .22s cubic-bezier(.3, .7, .4, 1)';
+      el.style.transform = `translate3d(0, ${h + 40}px, 0)`;
+      dim.style.transition = 'opacity .22s ease';
+      dim.style.opacity = '0';
+      setTimeout(close, 220);
+    } else {
+      el.style.transition = 'transform .32s cubic-bezier(.2, .9, .25, 1.05)';
+      el.style.transform = '';
+      dim.style.transition = 'opacity .32s ease';
+      dim.style.opacity = '';
+    }
+  }
+
+  // Touch (the phone): touchmove must be non-passive so a drag can stop the sheet from scrolling.
+  el.addEventListener('touchstart', (e) => { if (e.touches.length === 1) begin(e.touches[0].clientX, e.touches[0].clientY, e.timeStamp, e.target); else d = null; }, { passive: true });
+  el.addEventListener('touchmove', (e) => { const p = e.touches[0]; if (p) move(p.clientX, p.clientY, e.timeStamp, e); }, { passive: false });
+  el.addEventListener('touchend', end);
+  el.addEventListener('touchcancel', () => { if (d) { d.dy = 0; } end(); });
+  // Mouse (a computer): drag by the grab bar or header only.
+  el.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'mouse' || e.button !== 0 || !(grab.contains(e.target) || head.contains(e.target))) return;
+    if (e.target.closest('button')) return;
+    begin(e.clientX, e.clientY, e.timeStamp, e.target);
+    const mv = (ev) => move(ev.clientX, ev.clientY, ev.timeStamp, ev);
+    const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); end(); };
+    window.addEventListener('pointermove', mv);
+    window.addEventListener('pointerup', up);
+  });
 }
