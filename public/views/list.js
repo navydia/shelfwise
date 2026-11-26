@@ -55,9 +55,11 @@ export async function renderList(root, ctx) {
   }
   // The staples are for suggestions and the line sheet; the list itself still shows without them.
   const [data, categories, items] = await Promise.all([
-    api.getList(storeId, budget), api.getCategories(), api.getItems(storeId).catch(() => []),
+    api.getList(storeId, budget), api.getCategories(), api.getItems(storeId).catch(() => null),
   ]);
   if (ctx.stale?.()) return; // a newer render has started: leave the page and dock alone
+  const itemsFailed = items === null; // staples did not load: say so, and never turn a staple name into a one-off
+  const staples = items ?? [];
   const lines = [...data.lines, ...data.unpriced];
   const redraw = () => renderList(root, ctx);
   let group = loadGroup(storeId);
@@ -92,7 +94,13 @@ export async function renderList(root, ctx) {
   function applyBudget() { const c = parseDollars(api.store.get(budgetKey(storeId), '')); data.budgetCents = c || null; drawTag(data.subtotalCents); }
   const title = titleRow('Shopping List', openSettings);
   title.dataset.list = '1';
-  root.append(title, tripBox, tagBtn, bar, sections);
+  const loadNote = el('div', 'msg'); loadNote.setAttribute('role', 'alert'); loadNote.hidden = !itemsFailed;
+  if (itemsFailed) {
+    const retry = el('button', 'btn-link', 'Try again'); retry.type = 'button';
+    retry.addEventListener('click', redraw);
+    loadNote.append(el('span', '', "Couldn't load your staples. Adding and size changes are off until they load. "), retry);
+  }
+  root.append(title, tripBox, loadNote, tagBtn, bar, sections);
   revealOnFocus(sections); // the price boxes and the add field stay above the keyboard
   // The keyboard covers the bottom of the screen, so while a field is focused the page gets room to scroll it up.
   let padTimer = 0;
@@ -128,12 +136,12 @@ export async function renderList(root, ctx) {
 
   // A staple goes on the list (through the size picker when it has several sizes).
   async function addStaple(item) {
-    if (item.sizes.length > 1) { setAdding(false); openSizePicker(item, { onAdded: redraw }); return; }
+    if (item.sizes.length > 1) { form.querySelector('.add-go').disabled = false; setAdding(false); openSizePicker(item, { onAdded: redraw }); return; }
     await api.patchItem(item.id, { onList: true });
     redraw();
   }
   function drawSuggestions() {
-    const found = suggestStaples(items, form.elements.name.value);
+    const found = suggestStaples(staples, form.elements.name.value);
     suggest.replaceChildren();
     suggest.hidden = !found.length;
     for (const item of found) {
@@ -156,10 +164,11 @@ export async function renderList(root, ctx) {
     e.preventDefault();
     const name = form.elements.name.value.trim();
     if (!name) return;
+    if (itemsFailed) { toast("Couldn't load your staples, so nothing was added. Tap Try again at the top."); return; }
     const go = form.querySelector('.add-go');
     go.disabled = true;
     try {
-      const staple = findStaple(items, name);
+      const staple = findStaple(staples, name);
       if (!staple) { await api.createOneoff(storeId, { name }); redraw(); }
       else if (staple.onList) { setAdding(false); go.disabled = false; toast(`${staple.name} is already on your list.`); }
       else await addStaple(staple);
@@ -167,7 +176,7 @@ export async function renderList(root, ctx) {
   });
 
   function openLine(l) {
-    openLineSheet(l, { storeId, items, categories, stores: state.stores, toast, onChanged: redraw });
+    openLineSheet(l, { storeId, items: staples, categories, stores: state.stores, toast, onChanged: redraw });
   }
 
   // The price box on an unpriced one-off. Saved on blur or Enter; empty writes nothing; the total follows as you type.
@@ -190,21 +199,22 @@ export async function renderList(root, ctx) {
       const p = parsePrice(input.value);
       if (!p.ok) {
         input.setAttribute('aria-invalid', 'true');
-        say('Enter a price like 3.49'); sub.setAttribute('role', 'alert');
+        say('Use a price like 3.49'); sub.setAttribute('role', 'alert');
         drawTag(data.subtotalCents);
         return;
       }
       if (p.cents == null) { drawTag(data.subtotalCents); return; } // nothing typed: nothing is written
       saving = true;
       try { await api.patchOneoff(l.id, { priceCents: p.cents }); }
-      catch (err) { saving = false; say(err.message); sub.setAttribute('role', 'alert'); drawTag(data.subtotalCents); return; }
+      catch (err) { saving = false; if (ctx.stale?.()) return; say(err.message); sub.setAttribute('role', 'alert'); drawTag(data.subtotalCents); return; }
       if (ctx.stale?.()) return;
       l.unitPriceCents = p.cents; l.lineCents = lineTotalCents(p.cents, l.amount);
       data.subtotalCents += l.lineCents;
       drawTag(data.subtotalCents);
       // Only this row is redrawn, so a price box the next tap has just opened keeps its focus.
-      const row = box.closest('.row');
-      row?.replaceWith(rowFor(l, new Set(api.trips.get(storeId).ids).has(lineKey(l))));
+      // If a tick or redraw replaced the row while the save was in flight, redraw from the data we hold.
+      if (box.isConnected) box.closest('.row')?.replaceWith(rowFor(l, new Set(api.trips.get(storeId).ids).has(lineKey(l))));
+      else drawLive();
     });
     return box;
   }

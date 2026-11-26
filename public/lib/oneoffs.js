@@ -2,7 +2,8 @@
 
 // Typed price text to cents. Blank is "no price" (null). Never guesses: anything odd is not ok.
 export function parsePrice(text) {
-  const s = String(text ?? '').trim();
+  let s = String(text ?? '').trim();
+  if (s.includes('.')) s = s.replace(/,/g, ''); // "1,234.50": commas are thousands separators only when a dot is the decimal
   if (s === '') return { ok: true, cents: null };
   const m = /^\$?(\d*)(?:\.(\d{1,2}))?$/.exec(s);
   if (!m || (m[1] === '' && m[2] === undefined)) return { ok: false, cents: null };

@@ -20,6 +20,7 @@ const num = (n) => String(Math.round(n * 100) / 100);
 function amountControl(soldBy, amount, onChange) {
   let value = amount;
   const wrap = el('div', 'amt');
+  const hint = el('div', 'sub2 amt-bad', 'Enter pounds like 2.5'); hint.setAttribute('role', 'alert'); hint.hidden = true;
   if (soldBy === 'weight') {
     const input = el('input'); input.type = 'text'; input.inputMode = 'decimal'; input.autocomplete = 'off';
     input.setAttribute('aria-label', 'Pounds'); input.value = num(value);
@@ -27,13 +28,14 @@ function amountControl(soldBy, amount, onChange) {
     money.append(input, el('span', 'per', 'lb'));
     const commit = () => {
       const n = parseAmount(input.value);
-      if (n == null) { input.value = num(value); return; } // keep the last good weight
+      if (n == null) { input.value = num(value); hint.hidden = false; return; } // keep the last good weight, and say so
+      hint.hidden = true;
       if (n !== value) { value = n; onChange(value); }
       input.value = num(value);
     };
     input.addEventListener('change', commit);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); input.blur(); } });
-    wrap.append(money);
+    wrap.append(money, hint);
     return { node: wrap, commit };
   }
   const stepper = el('div', 'stepper');
@@ -180,7 +182,7 @@ function oneoffSheet(line, ctx) {
     const nm = name.value.trim();
     if (!nm) { fail('Give it a name.'); return; }
     const p = parsePrice(price.value);
-    if (!p.ok) { fail('Enter a price like 3.49, or leave it empty.'); return; }
+    if (!p.ok) { fail('Use a price like 3.49, or leave it empty.'); return; }
     const patch = {};
     if (nm !== line.name) patch.name = nm;
     if (p.cents !== line.unitPriceCents) patch.priceCents = p.cents;

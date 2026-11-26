@@ -12,6 +12,7 @@ describe('parsePrice', () => {
     expect(parsePrice('$3.5')).toEqual({ ok: true, cents: 350 });
     expect(parsePrice('4')).toEqual({ ok: true, cents: 400 });
     expect(parsePrice('.99')).toEqual({ ok: true, cents: 99 });
+    expect(parsePrice('1,234.50')).toEqual({ ok: true, cents: 123450 });
   });
   it('rejects_junk_and_extra_decimals', () => {
     for (const bad of ['abc', '3.499', '-1', '1,50', '3.', '1e3']) expect(parsePrice(bad).ok).toBe(false);
