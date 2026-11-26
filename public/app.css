@@ -235,6 +235,8 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .money { display: flex; align-items: center; gap: 4px; min-height: var(--tap); padding: 0 12px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
 .money .cur { font-family: var(--font-disp); font-weight: 700; font-size: 18px; color: var(--stone); }
 .money input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 0; font-family: var(--font-disp); font-weight: 800; font-size: 18px; color: var(--f950); }
+.money input:focus-visible { outline: none; }
+.money:focus-within { border-color: var(--fig); box-shadow: 0 0 0 3px rgba(74, 50, 66, .15); }
 .stepper { display: flex; align-items: center; justify-content: space-between; min-height: var(--tap); width: 132px; padding: 0 4px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); }
 .stepper button { width: 36px; min-height: 36px; height: 36px; padding: 0; border-radius: 9px; background: var(--card); font-family: var(--font-disp); font-size: 18px; color: var(--f900); }
 .stepper button:disabled { color: var(--stone); opacity: .6; }
@@ -460,6 +462,7 @@ mark { background: var(--butter); color: var(--f950); border-radius: 3px; paddin
 .pbox { flex: none; display: flex; align-items: center; gap: 4px; width: 92px; min-height: var(--tap); padding: 0 10px; border-radius: 12px; border: 1.5px solid var(--pebble); background: var(--paper); color: var(--stone); font-family: var(--font-disp); font-weight: 700; font-size: 15px; }
 .pbox:focus-within { border-color: var(--fig); color: var(--f950); box-shadow: 0 0 0 3px rgba(74, 50, 66, .15); }
 .pbox input { flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; padding: 0; font: inherit; font-size: 16px; color: var(--f950); }
+.pbox input:focus-visible { outline: none; } /* the box shows the focus ring */
 .pbox input[aria-invalid=true] { color: var(--paprika); }
 .addform { flex-wrap: wrap; display: block; padding: 0; }
 .addform .addline { display: flex; align-items: center; gap: 8px; padding: 8px 12px; }

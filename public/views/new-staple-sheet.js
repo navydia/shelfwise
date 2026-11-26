@@ -40,7 +40,10 @@ export function openNewStapleSheet({ line, draft, categories = [], takenNames = 
     hint.hidden = !w;
   }
 
-  const priceWrap = field(priceLabel, price);
+  const money = el('div', 'money');
+  const cur = el('span', 'cur', '$'); cur.setAttribute('aria-hidden', 'true');
+  money.append(cur, price);
+  const priceWrap = field(priceLabel, money);
   const soldWrap = el('div', 'field'); soldWrap.append(el('span', '', 'Sold by'), seg);
   body.append(field('Name', name), field('Size name', sizeName), soldWrap, priceWrap, hint);
 
