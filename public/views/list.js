@@ -252,7 +252,7 @@ export async function renderList(root, ctx) {
     if (!n) return;
     const pill = el('button', 'finish-pill'); pill.type = 'button';
     pill.setAttribute('aria-label', `Finish shopping, ${n} ticked`);
-    pill.append(el('span', '', 'Finish shopping'), el('i', '', String(n)));
+    pill.append(el('span', '', 'Complete'), el('i', '', String(n)));
     pill.addEventListener('click', () => finishForStore(store, { toast, onDone: redraw }));
     slot.append(pill);
   }

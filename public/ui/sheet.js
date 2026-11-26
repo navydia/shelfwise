@@ -1,4 +1,6 @@
-// Bottom sheet: grab handle, optional title, backdrop. Closes on backdrop tap or Escape; focus stays inside.
+import { icon } from './icons.js';
+
+// Bottom sheet: optional title, close button, backdrop. Closes on backdrop tap or Escape; focus stays inside.
 // It never focuses a text field on open (that would pop the keyboard): focus goes to the sheet itself.
 // While open it rides above the on-screen keyboard (visualViewport) and keeps the focused field in view.
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -22,6 +24,24 @@ export function nextTabTarget(items, active, shift, container) {
 
 const OPEN = []; // sheets can stack (a size sheet over the staple sheet): only the top one answers keys
 
+// While any sheet is open the page behind must not scroll. iOS ignores overflow:hidden on body, so the body is
+// pinned in place at its current offset and put back exactly where it was when the last sheet closes.
+// body.locked tells the tab bar to ignore the scroll jumps this causes.
+let lockedY = 0;
+function lockPage() {
+  lockedY = window.scrollY;
+  const b = document.body;
+  b.classList.add('locked');
+  Object.assign(b.style, { position: 'fixed', top: `-${lockedY}px`, left: '0', right: '0', width: '100%' });
+}
+function unlockPage() {
+  const b = document.body;
+  Object.assign(b.style, { position: '', top: '', left: '', right: '', width: '' });
+  window.scrollTo(0, lockedY);
+  // The scroll event from scrollTo fires on a later frame; stay "locked" until it has passed.
+  requestAnimationFrame(() => requestAnimationFrame(() => { if (!OPEN.length) b.classList.remove('locked'); }));
+}
+
 const FIELD = 'input, select, textarea, [contenteditable=true]';
 
 // Scrolls a field into view once the keyboard has had time to appear. For inline inputs outside a sheet too.
@@ -43,17 +63,24 @@ export function openSheet({ title, body, onClose } = {}) {
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   el.tabIndex = -1;
-  const handle = document.createElement('div');
-  handle.className = 'handle';
-  el.append(handle);
+  // Header: the title (if any) and a close button. No drag handle: sheets close with X, a tap outside, or Escape.
+  const head = document.createElement('div');
+  head.className = title ? 'sheet-head' : 'sheet-head bare';
   if (title) {
     const h = document.createElement('h2');
     h.id = `sheet-title-${Math.random().toString(36).slice(2, 8)}`;
     h.textContent = title;
     el.setAttribute('aria-labelledby', h.id);
-    el.append(h);
+    head.append(h);
   }
-  el.append(body);
+  const x = document.createElement('button');
+  x.type = 'button';
+  x.className = 'sheet-x';
+  x.setAttribute('aria-label', 'Close');
+  x.innerHTML = icon('close');
+  head.append(x);
+  el.append(head, body);
+  if (!OPEN.length) lockPage();
   document.body.append(dim, el);
 
   let closed = false;
@@ -64,6 +91,7 @@ export function openSheet({ title, body, onClose } = {}) {
     OPEN.splice(OPEN.indexOf(el), 1);
     if (vv) { vv.removeEventListener('resize', fit); vv.removeEventListener('scroll', fit); }
     dim.remove(); el.remove();
+    if (!OPEN.length) unlockPage();
     if (opener && typeof opener.focus === 'function' && document.contains(opener)) opener.focus();
     onClose?.();
   }
@@ -91,6 +119,9 @@ export function openSheet({ title, body, onClose } = {}) {
   OPEN.push(el);
   document.addEventListener('keydown', onKey, true);
   dim.addEventListener('click', close);
+  x.addEventListener('click', close);
+  // A swipe on the dimmed page must not scroll what is behind it.
+  dim.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
   el.focus({ preventScroll: true });
   return { close, el };
 }

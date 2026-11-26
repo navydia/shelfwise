@@ -34,6 +34,8 @@ export function mountTabBar(nav, scroller = window) {
   let last = anchor;
   scroller.addEventListener('scroll', () => {
     const y = Math.max(0, scroller.scrollY ?? 0);
+    // A sheet pins the page and puts it back on close: those jumps are not the user scrolling.
+    if (document.body.classList.contains('locked')) { anchor = last = y; return; }
     if (y < last) { dock.classList.remove('mini'); anchor = y; }
     else if (y > last && y - anchor >= COLLAPSE_AFTER) dock.classList.add('mini');
     last = y;
